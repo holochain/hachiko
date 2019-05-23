@@ -41,7 +41,7 @@ export class Waiter {
   }
 
   handleObservation (o: Observation) {
-    const {agent, action} = o
+    // const {action} = o
     this.consumeObservation(o)
     this.expandObservation(o)
   }
@@ -49,10 +49,8 @@ export class Waiter {
   consumeObservation (o: Observation) {
     const wasNotEmpty = this.pendingEffects.length > 0
     console.log(this.pendingEffects)
-    this.pendingEffects = this.pendingEffects.filter(({predicate, agents}) => {
-      console.log(o)
-      console.log(agents)
-      const matches = predicate(o.action) && agents.includes(o.agent)
+    this.pendingEffects = this.pendingEffects.filter(({predicate, targetNode}) => {
+      const matches = predicate(o.action) && o.node === targetNode
       if (matches) {
         // big ol' side effect in a filter, but it works
         this.completedObservations.push({

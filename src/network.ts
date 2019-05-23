@@ -1,6 +1,6 @@
 
 import {
-  Agent,
+  NodeId,
   Action,
   Entry,
   EffectAbstract,
@@ -10,18 +10,19 @@ import {
 } from './elements'
 
 import {
-  resolveCause
+  CausalityModel
 } from './causation'
 
 export class NetworkModel {
   // // the total set of agents participating in the network
-  agents: Array<Agent>
+  agents: Array<NodeId>
+  causality: CausalityModel
 
   // // a connectivity matrix representing every possible p2p connection
   // // the number represents additional latency to simulate. Negative numbers mean infinite latency.
   // connectionMatrix: Array<Array<number>>
 
-  constructor (agents: Array<Agent>) {
+  constructor (agents: Array<NodeId>) {
     this.agents = agents
   }
 
@@ -33,15 +34,20 @@ export class NetworkModel {
    * particular cause-effect pair.
    */
   determineEffects = (o: Observation): Array<EffectConcrete> => {
-    const effects = resolveCause(o.action)
-    return effects.map(e => this.reifyEffect(o, e))
+    const effects = this.causality.resolveAction(o.action)
+    return effects.flatMap(e => this.reifyEffect(o, e))
   }
 
-  reifyEffect = ({agent, action}: Observation, {predicate, group}: EffectAbstract): EffectConcrete => {
+  reifyEffect = (
+    {node, action}: Observation,
+    {description, predicate, group}: EffectAbstract
+  ): Array<EffectConcrete> => {
     if (group === EffectGroup.Self) {
-      return {predicate, agents: [agent]}
+      return [{description, predicate, sourceNode: node, targetNode: node}]
     } else if (group === EffectGroup.Validators) {
-      return {predicate, agents: this.validators(action) }
+      return this.validators(action).map(targetNode => (
+        { description, predicate, sourceNode: node, targetNode }
+      ))
     } else {
       throw `unknown EffectGroup: ${group}`
     }
@@ -51,7 +57,7 @@ export class NetworkModel {
    * Determine which agents are validators for a particular Entry,
    * based on the action (which should have a reference to the entry)
    */
-  validators = (action: Action): Array<Agent> => {
+  validators = (action: Action): Array<NodeId> => {
     throw "abstract method not implemented"
   }
 
@@ -67,7 +73,7 @@ export class NetworkModel {
 
 export class FullSyncNetwork extends NetworkModel {
 
-  validators = (entry: Entry): Array<Agent> => {
+  validators = (entry: Entry): Array<NodeId> => {
     // currently full-sync
     return this.agents
   }

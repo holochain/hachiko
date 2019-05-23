@@ -1,6 +1,6 @@
 
 export type Entry = {}
-export type Agent = string
+export type NodeId = string
 export type Action = {
   action_type: string,
   data: any,
@@ -17,22 +17,25 @@ export type CauseMatcher = {
  * abstracted away from any particular network
  */
 export type EffectAbstract = {
+  description: string,
   predicate: ActionPredicate,
   group: EffectGroup
 }
 
 /**
  * A representation of a matcher for the effect of a Cause,
- * as viewed by a particular agent
+ * as viewed by a particular node
  */
 export type EffectConcrete = {
+  description: string,
   predicate: ActionPredicate,
-  agents: Array<Agent>
+  sourceNode: NodeId,
+  targetNode: NodeId,
 }
 
 /**
  * Specifies which group of agents the Effect affects
- * - Self: The agent who produced the corresponding Cause
+ * - Self: The node who produced the corresponding Cause
  * - Validators: All validators associated with the Cause
  */
 export enum EffectGroup {
@@ -45,6 +48,6 @@ export enum EffectGroup {
  * A concrete Effect, in the context of a NetworkModel
  */
 export type Observation = {
-  agent: Agent,
+  node: NodeId,
   action: Action,
 }

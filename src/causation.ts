@@ -11,41 +11,39 @@ import {
 import * as Im from 'immutable'
 
 
-const cause =
-  (predicate: ActionPredicate): CauseMatcher => ({predicate})
+export class CausalityModel {
+  commitCache: {[address: string]: any}
 
-const effect =
-  (group: EffectGroup) =>
-  (predicate: ActionPredicate): EffectAbstract => ({predicate, group})
+  constructor() {
+    this.commitCache = {}
+  }
 
-type CausationDef = {
-  description: String,
-  cause: CauseMatcher,
-  effects: Array<EffectAbstract>,
-  // update?: (CausationState, Action) => CausationState
-}
+  resolveAction = (action: Action): Array<EffectAbstract> => {
+    console.log('-----------------------')
+    console.log('resolveAction:')
+    console.log(JSON.stringify(action, null, 2))
+    console.log('-----------------------')
+    console.log('')
 
-const causations: Array<CausationDef> = [
-  {
-    description: "Publish",
-    cause: cause(action => action.action_type === 'Publish'),
-    effects: [
-      effect(EffectGroup.Validators)(
-        action => action.action_type === 'Hold'
-      )
-    ]
-  },
-]
+    const data = action.data
+    switch (action.action_type) {
+      case 'Commit':
+        const entry = data[0]
+        // this.commitCache[]
+        break
+      case 'Publish':
+        break
+      case 'AddPendingValidation':
+        break
+    }
 
-export const resolveCause = (action: Action): Array<EffectAbstract> => {
-  return flatten(
-    causations
-    .filter(({cause}) => {
-      const match = cause.predicate(action)
-    })
-    .map(({effects}) => effects)
-  )
+    return []
+  }
 
 }
 
-const flatten = arrays => [].concat.apply([], arrays)
+const effect = (
+  description: string,
+  group: EffectGroup,
+  predicate: ActionPredicate
+): EffectAbstract => ({description, predicate, group})
