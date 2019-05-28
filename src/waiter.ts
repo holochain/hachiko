@@ -12,6 +12,10 @@ import {
   NetworkModel
 } from './network'
 
+
+console.debug = () => {}
+
+
 type InstrumentedObservation = {
   observation: Observation,
   stats: {
@@ -42,7 +46,7 @@ export class Waiter {
   }
 
   registerCallback (cb: AwaitCallback) {
-    console.log('rrrrrrrrrrREGISTERING callback with', this.pendingEffects.length, 'pending')
+    console.debug('rrrrrrrrrrREGISTERING callback with', this.pendingEffects.length, 'pending')
     if (this.pendingEffects.length > 0) {
       // make it wait
       this.callbacks.push(cb)
@@ -55,9 +59,9 @@ export class Waiter {
   handleObservation (o: Observation) {
     this.consumeObservation(o)
     this.expandObservation(o)
-    console.log('wwwwwwwwwwwwwwwwwwwWAITING ON THIS MANY: ', this.pendingEffects.length)
-    console.log(o)
-    console.log(this.pendingEffects)
+    console.debug('wwwwwwwwwwwwwwwwwwwWAITING ON THIS MANY: ', this.pendingEffects.length)
+    console.debug(o)
+    console.debug(this.pendingEffects)
     this.checkCompletion()
   }
 
