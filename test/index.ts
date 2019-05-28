@@ -15,19 +15,22 @@ tape('x', t => {
   const network = new FullSyncNetwork(agents)
   const waiter = new Waiter(network)
 
-  waiter.handleObservation({
-    agent: 'autumn',
-    action: testCommit
-  })
+  t.equal(waiter.pendingEffects.length, 0)
+  // waiter.handleObservation({
+  //   node: 'autumn',
+  //   signal: testCommit
+  // })
 
-  waiter.handleObservation({
-    agent: 'mara',
-    action: testHold,
-  })
-  waiter.handleObservation({
-    agent: 'jill',
-    action: testHold,
-  })
-  t.equal(waiter.pendingEffects.length, 1)
+  // waiter.handleObservation({
+  //   node: 'mara',
+  //   signal: testHold,
+  // })
+  // waiter.handleObservation({
+  //   node: 'jill',
+  //   signal: testHold,
+  // })
+  t.equal(waiter.pendingEffects.length, 0)
+
+  t.end()
 
 })

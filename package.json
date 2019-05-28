@@ -1,16 +1,17 @@
 {
-  "name": "@holochain/netmodel",
+  "name": "@holochain/scenario-waiter",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
+    "dev": "tsc -w",
     "test": "ts-node test"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "immutable": "^4.0.0-rc.12"
+    "lodash": "^4.17.11"
   },
   "devDependencies": {
     "@types/node": "^12.0.0",

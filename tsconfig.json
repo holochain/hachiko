@@ -6,7 +6,7 @@
     "module": "commonjs",
     "target": "es6",
     "sourceMap": true,
-    "lib": ["es2018"],
+    "lib": ["es2018", "esnext.array"],
     // "downlevelIteration": true,
 
     "forceConsistentCasingInFileNames": true,

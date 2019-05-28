@@ -5,11 +5,10 @@ export type Action = {
   action_type: string,
   data: any,
 }
-
-export type ActionPredicate = (action: Action) => boolean
-
-export type CauseMatcher = {
-  predicate: ActionPredicate,
+export type Event = String
+export type Signal = {
+  event: Event,
+  pending: Array<EffectAbstract>
 }
 
 /**
@@ -17,8 +16,8 @@ export type CauseMatcher = {
  * abstracted away from any particular network
  */
 export type EffectAbstract = {
-  description: string,
-  predicate: ActionPredicate,
+  // description: string,
+  event: Event,
   group: EffectGroup
 }
 
@@ -27,20 +26,20 @@ export type EffectAbstract = {
  * as viewed by a particular node
  */
 export type EffectConcrete = {
-  description: string,
-  predicate: ActionPredicate,
+  // description: string,
+  event: Event,
   sourceNode: NodeId,
   targetNode: NodeId,
 }
 
 /**
  * Specifies which group of agents the Effect affects
- * - Self: The node who produced the corresponding Cause
+ * - Source: The node who produced the corresponding Cause
  * - Validators: All validators associated with the Cause
  */
 export enum EffectGroup {
-  Self,
-  Validators
+  Source = 'Source',
+  Validators = 'Validators',
 }
 
 
@@ -49,5 +48,5 @@ export enum EffectGroup {
  */
 export type Observation = {
   node: NodeId,
-  action: Action,
+  signal: Signal,
 }
