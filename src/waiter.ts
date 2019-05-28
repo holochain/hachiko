@@ -87,7 +87,7 @@ export class Waiter {
     const grouped = groupBy(this.pendingEffects, e => e.targetNode)
     this.callbacks = this.callbacks.filter(({nodes, callback}) => {
       const completed = nodes
-        ? nodes.every(nodeId => grouped[nodeId].length === 0)
+        ? nodes.every(nodeId => !(nodeId in grouped) || grouped[nodeId].length === 0)
         : this.pendingEffects.length === 0
       if (completed) {
         callback()
