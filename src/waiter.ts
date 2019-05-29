@@ -13,7 +13,7 @@ import {
 } from './network'
 
 
-console.debug = () => {}
+// console.debug = () => {}
 
 
 type InstrumentedObservation = {
