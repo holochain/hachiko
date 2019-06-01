@@ -1,15 +1,18 @@
 {
   "name": "@holochain/hachiko",
-  "version": "0.0.1",
+  "version": "0.1.0-rc1",
   "description": "",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -d",
     "dev": "tsc -w",
     "prepare": "npm run build",
+    "prepublishOnly": "npm test",
     "test": "ts-node test"
   },
-  "author": "",
+  "files": ["lib/**/*"],
+  "author": "Holochain Core Dev Team <devcore@holochain.org>",
   "license": "ISC",
   "dependencies": {
     "lodash": "^4.17.11"
