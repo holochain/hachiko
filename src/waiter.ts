@@ -13,8 +13,8 @@ import {
   NetworkModel
 } from './network'
 
+import logger from './logger'
 
-// console.debug = () => {}
 
 const SOFT_TIMEOUT_MS = 8000
 const HARD_TIMEOUT_MS = 30000
@@ -59,7 +59,7 @@ export class Waiter {
   }
 
   registerCallback (cb: AwaitCallback) {
-    console.debug('rrrrrrrrrrREGISTERING callback with', this.pendingEffects.length, 'pending')
+    logger.silly('rrrrrrrrrrREGISTERING callback with', this.pendingEffects.length, 'pending')
     if (this.pendingEffects.length > 0) {
       // make it wait
       const tickingCallback = Object.assign({}, cb, {
@@ -77,12 +77,12 @@ export class Waiter {
   handleObservation (o: Observation) {
     this.consumeObservation(o)
     this.expandObservation(o)
-    console.debug(colors.yellow('wwwwwwwwwwwwwwwwwwwWAITING ON THIS MANY: '), this.pendingEffects.length)
-    console.debug(colors.yellow('last signal:'))
-    console.debug(o)
-    console.debug(colors.yellow('pending effects:'))
-    console.debug(this.pendingEffects)
-    console.debug(colors.yellow('callbacks:'), this.callbacks.length)
+    logger.silly(colors.yellow('wwwwwwwwwwwwwwwwwwwWAITING ON THIS MANY: '), this.pendingEffects.length)
+    logger.silly(colors.yellow('last signal:'))
+    logger.silly(o)
+    logger.silly(colors.yellow('pending effects:'))
+    logger.silly(this.pendingEffects)
+    logger.silly(colors.yellow('callbacks:'), this.callbacks.length)
     this.checkCompletion()
   }
 
@@ -120,7 +120,7 @@ export class Waiter {
         resolve()
         clearTimeout(softTimeout)
         clearTimeout(hardTimeout)
-        console.log('resollllllved callback id:', id)
+        logger.silly('resollllllved callback id:', id)
       }
       return !completed
     })
