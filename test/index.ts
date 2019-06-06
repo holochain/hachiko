@@ -7,7 +7,7 @@ import {FullSyncNetwork} from '../src/network'
 const observation = (node, signal) => ({node, signal})
 const signal = (event, pending) => ({event, pending})
 const pending = (group, event) => ({group, event})
-const testCallback = (nodes) => ({callback: sinon.spy(), nodes})
+const testCallback = (nodes) => ({resolve: sinon.spy(), reject: sinon.spy(), nodes})
 const testWaiter = () => {
   const network = new FullSyncNetwork(agents)
   const waiter = new Waiter(network)
@@ -25,6 +25,18 @@ const test = (desc, f) => {
 }
 
 const numPending = (t, waiter, n) => t.equal(waiter.pendingEffects.length, n)
+const resolved = (t, cb) => {
+  t.calledOnce(cb.resolve)
+  t.notCalled(cb.reject)
+}
+const rejected = (t, cb) => {
+  t.notCalled(cb.resolve)
+  t.calledOnce(cb.reject)
+}
+const notCalled = (t, cb) => {
+  t.notCalled(cb.resolve)
+  t.notCalled(cb.reject)
+}
 
 const agents = ['autumn', 'mara', 'jill']
 
@@ -35,8 +47,8 @@ test('resolves immediately if nothing pending', t => {
 
   waiter.registerCallback(cb0)
   waiter.registerCallback(cb1)
-  t.calledOnce(cb0.callback)
-  t.calledOnce(cb1.callback)
+  resolved(t, cb0)
+  resolved(t, cb1)
   t.end()
 })
 
@@ -47,10 +59,42 @@ test('resolves later if pending', t => {
   waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
   waiter.registerCallback(cb0)
   waiter.handleObservation(observation('autumn', signal('z', [])))
-  t.notCalled(cb0.callback)
+  notCalled(t, cb0)
 
   waiter.handleObservation(observation('jill', signal('y', [])))
-  t.calledOnce(cb0.callback)
+  resolved(t, cb0)
+  t.end()
+})
+
+test('soft timeout has no effect', t => {
+  const waiter = testWaiter()
+  const cb0 = testCallback(null)
+
+  waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
+  waiter.registerCallback(cb0)
+  waiter.handleObservation(observation('autumn', signal('z', [])))
+  notCalled(t, cb0)
+
+  waiter.onSoftTimeout(cb0)()
+  waiter.handleObservation(observation('jill', signal('y', [])))
+  resolved(t, cb0)
+  t.end()
+})
+
+test('hard timeout causes rejection', t => {
+  const waiter = testWaiter()
+  const cb0 = testCallback(null)
+
+  waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
+  waiter.registerCallback(cb0)
+  waiter.handleObservation(observation('autumn', signal('z', [])))
+  notCalled(t, cb0)
+
+  waiter.onHardTimeout(cb0)()
+  rejected(t, cb0)
+  waiter.handleObservation(observation('jill', signal('y', [])))
+  // NB: cb0.resolve() will have been called here. There is no guarantee that after a rejection,
+  // resolve will not be called.
   t.end()
 })
 
@@ -62,12 +106,12 @@ test('can resolve only for certain nodes', t => {
   waiter.handleObservation(observation('jill', signal('x', [pending('Validators', 'y')])))
   waiter.registerCallback(cb2a)
   waiter.handleObservation(observation('autumn', signal('y', [])))
-  t.notCalled(cb2a.callback)
+  notCalled(t, cb2a)
 
   waiter.registerCallback(cb2b)
   waiter.handleObservation(observation('jill', signal('y', [])))
-  t.calledOnce(cb2a.callback)
-  t.notCalled(cb2b.callback)
+  resolved(t, cb2a)
+  notCalled(t, cb2b)
   t.equal(waiter.pendingEffects.length, 1)
   t.deepEqual(waiter.pendingEffects[0], {
     event: 'y',
@@ -76,7 +120,7 @@ test('can resolve only for certain nodes', t => {
   })
 
   waiter.handleObservation(observation('mara', signal('y', [])))
-  t.calledOnce(cb2b.callback)
+  t.calledOnce(cb2b.resolve)
 
   t.end()
 })

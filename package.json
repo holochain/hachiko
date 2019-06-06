@@ -6,15 +6,18 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc -d",
-    "dev": "tsc -w",
+    "dev": "tsc -d -w",
     "prepare": "npm run build",
     "prepublishOnly": "npm test",
     "test": "ts-node test"
   },
-  "files": ["lib/**/*"],
+  "files": [
+    "lib/**/*"
+  ],
   "author": "Holochain Core Dev Team <devcore@holochain.org>",
   "license": "ISC",
   "dependencies": {
+    "colors": "^1.3.3",
     "lodash": "^4.17.11"
   },
   "devDependencies": {
