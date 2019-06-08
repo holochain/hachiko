@@ -16,8 +16,8 @@ import {
 import logger from './logger'
 
 
-const SOFT_TIMEOUT_MS = 8000
-const HARD_TIMEOUT_MS = 30000
+const SOFT_TIMEOUT_MS = 16000
+const HARD_TIMEOUT_MS = 60000
 
 type InstrumentedObservation = {
   observation: Observation,
