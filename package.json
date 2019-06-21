@@ -1,6 +1,6 @@
 {
   "name": "@holochain/hachiko",
-  "version": "0.1.0",
+  "version": "0.2.0-rc-1",
   "description": "A Holochain scenario test Waiter implementation in JS",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

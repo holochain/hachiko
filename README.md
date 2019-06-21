@@ -1,4 +1,4 @@
-# hachiko
+# hachikō
 
 [![CircleCI](https://circleci.com/gh/holochain/hachiko.svg?style=svg)](https://circleci.com/gh/holochain/hachiko)
 
