@@ -1,8 +1,7 @@
-import {groupBy} from 'lodash'
+import * as _ from 'lodash'
 import * as colors from 'colors'
 
 import {
-  Action,
   EffectConcrete,
   EffectGroup,
   Observation,
@@ -39,9 +38,11 @@ type AwaitCallbackWithTimeout = AwaitCallback & {
   id: number,
 }
 
+export type NetworkMap = {[name: string]: NetworkModel}
+
 export class Waiter {
   pendingEffects: Array<EffectConcrete>
-  networkModel: NetworkModel
+  networks: NetworkMap
   complete: Promise<null>
   startTime: number
   callbacks: Array<AwaitCallbackWithTimeout>
@@ -49,13 +50,25 @@ export class Waiter {
 
   completedObservations: Array<InstrumentedObservation>
 
-  constructor(networkModel: NetworkModel) {
+  constructor(networks: NetworkMap) {
+    this.assertUniqueness(networks)
     this.pendingEffects = []
     this.completedObservations = []
     this.callbacks = []
-    this.networkModel = networkModel
+    this.networks = networks
     this.startTime = Date.now()
     this.lastCallbackId = 1
+  }
+
+  assertUniqueness (networks: NetworkMap) {
+    const nodeIds = _.chain(networks).values().map(n => n.nodes).flatten().value()
+    const frequencies = _.countBy(nodeIds)
+    const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
+    if (dupes.length > 0) {
+      logger.debug('found dupes:', nodeIds)
+      const msg = `There are ${dupes.length} non-unique node IDs specified in the Waiter creation: ${JSON.stringify(dupes)}`
+      throw new Error(msg)
+    }
   }
 
   registerCallback (cb: AwaitCallback) {
@@ -104,12 +117,15 @@ export class Waiter {
   }
 
   expandObservation (o: Observation) {
-    const effects = this.networkModel.determineEffects(o)
+    if (!(o.dna in this.networks)) {
+      throw new Error(`Attempting to process observation from unrecognized network '${o.dna}'`)
+    }
+    const effects = this.networks[o.dna].determineEffects(o)
     this.pendingEffects = this.pendingEffects.concat(effects)
   }
 
   checkCompletion () {
-    const grouped = groupBy(this.pendingEffects, e => e.targetNode)
+    const grouped = _.groupBy(this.pendingEffects, e => e.targetNode)
     this.callbacks = this.callbacks.filter(({
       nodes, resolve, softTimeout, hardTimeout, id
     }) => {

@@ -1,15 +1,28 @@
 
 export type Entry = {}
-export type NodeId = string
-export type Action = {
-  action_type: string,
-  data: any,
-}
 export type Event = String
+export type NodeId = string
+export type DnaId = string
+
+export type NodeConfig = {
+  id: NodeId,
+  dna: DnaId,
+}
+
 export type Signal = {
   event: Event,
   pending: Array<EffectAbstract>
 }
+
+/**
+ * A Signal emitted from a Node
+ */
+export type Observation = {
+  dna: DnaId,
+  node: NodeId,
+  signal: Signal,
+}
+
 
 /**
  * A representation of a matcher for the effect of a Cause,
@@ -40,13 +53,4 @@ export type EffectConcrete = {
 export enum EffectGroup {
   Source = 'Source',
   Validators = 'Validators',
-}
-
-
-/**
- * A concrete Effect, in the context of a NetworkModel
- */
-export type Observation = {
-  node: NodeId,
-  signal: Signal,
 }
