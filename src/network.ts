@@ -1,4 +1,4 @@
-
+import * as _ from 'lodash'
 import {
   NodeId,
   Entry,
@@ -19,6 +19,10 @@ export class NetworkModel {
   // connectionMatrix: Array<Array<number>>
 
   constructor (nodes: Array<NodeId>) {
+    if (nodes.some(_.negate(_.isString))) {
+      console.error("NetworkModel expects an array of strings, got:", nodes)
+      throw new Error("NetworkModel expects an array of strings")
+    }
     this.nodes = nodes
   }
 

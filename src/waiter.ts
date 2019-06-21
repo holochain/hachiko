@@ -65,6 +65,7 @@ export class Waiter {
     const frequencies = _.countBy(nodeIds)
     const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
     if (dupes.length > 0) {
+      logger.debug('found dupes:', nodeIds)
       const msg = `There are ${dupes.length} non-unique node IDs specified in the Waiter creation: ${JSON.stringify(dupes)}`
       throw new Error(msg)
     }
@@ -116,6 +117,9 @@ export class Waiter {
   }
 
   expandObservation (o: Observation) {
+    if (!(o.dna in this.networks)) {
+      throw new Error(`Attempting to process observation from unrecognized network '${o.dna}'`)
+    }
     const effects = this.networks[o.dna].determineEffects(o)
     this.pendingEffects = this.pendingEffects.concat(effects)
   }
