@@ -2,7 +2,6 @@ import {groupBy} from 'lodash'
 import * as colors from 'colors'
 
 import {
-  Action,
   EffectConcrete,
   EffectGroup,
   Observation,
@@ -39,9 +38,11 @@ type AwaitCallbackWithTimeout = AwaitCallback & {
   id: number,
 }
 
+export type NetworkMap = {[name: string]: NetworkModel}
+
 export class Waiter {
   pendingEffects: Array<EffectConcrete>
-  networkModel: NetworkModel
+  networks: NetworkMap
   complete: Promise<null>
   startTime: number
   callbacks: Array<AwaitCallbackWithTimeout>
@@ -49,11 +50,11 @@ export class Waiter {
 
   completedObservations: Array<InstrumentedObservation>
 
-  constructor(networkModel: NetworkModel) {
+  constructor(networks: NetworkMap) {
     this.pendingEffects = []
     this.completedObservations = []
     this.callbacks = []
-    this.networkModel = networkModel
+    this.networks = networks
     this.startTime = Date.now()
     this.lastCallbackId = 1
   }
@@ -104,7 +105,7 @@ export class Waiter {
   }
 
   expandObservation (o: Observation) {
-    const effects = this.networkModel.determineEffects(o)
+    const effects = this.networks[o.dna].determineEffects(o)
     this.pendingEffects = this.pendingEffects.concat(effects)
   }
 

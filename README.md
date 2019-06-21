@@ -6,3 +6,8 @@
 
 
 A Waiter is a little helper that hooks into Holochain's [consistency signals](https://github.com/holochain/holochain-rust/pull/1431). Hachiko is an implementation of such a Waiter. You can register a callback with Hachiko, and that callback will be called only when certain consistency conditions have been met. See the [tests](./test/index.ts) for thorough usage examples.
+
+
+## Invariants
+
+- `NodeId`s must be unique within a given `Waiter`
