@@ -1,9 +1,10 @@
-import * as tape from 'tape'
 import * as sinon from 'sinon'
 
 import {Waiter} from '../src/waiter'
 import {FullSyncNetwork} from '../src/network'
+import {test, resolved, rejected, notCalled} from './common'
 
+const agents = ['autumn', 'mara', 'jill']
 const observation = (node, signal) => ({node, signal, dna: 'testnet'})
 const signal = (event, pending) => ({event, pending})
 const pending = (group, event) => ({group, event})
@@ -13,32 +14,6 @@ const testWaiter = () => {
   const waiter = new Waiter({testnet: network})
   return waiter
 }
-
-const test = (desc, f) => {
-  tape(desc, t => {
-    // smush sinon.assert and tape API into a single object
-    const s = sinon.assert
-    s.pass = t.pass
-    s.fail = t.fail
-    f(Object.assign({}, t, s))
-  })
-}
-
-const numPending = (t, waiter, n) => t.equal(waiter.pendingEffects.length, n)
-const resolved = (t, cb) => {
-  t.calledOnce(cb.resolve)
-  t.notCalled(cb.reject)
-}
-const rejected = (t, cb) => {
-  t.notCalled(cb.resolve)
-  t.calledOnce(cb.reject)
-}
-const notCalled = (t, cb) => {
-  t.notCalled(cb.resolve)
-  t.notCalled(cb.reject)
-}
-
-const agents = ['autumn', 'mara', 'jill']
 
 test('resolves immediately if nothing pending', t => {
   const waiter = testWaiter()

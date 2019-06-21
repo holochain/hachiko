@@ -1,4 +1,4 @@
-import {groupBy} from 'lodash'
+import * as _ from 'lodash'
 import * as colors from 'colors'
 
 import {
@@ -51,12 +51,23 @@ export class Waiter {
   completedObservations: Array<InstrumentedObservation>
 
   constructor(networks: NetworkMap) {
+    this.assertUniqueness(networks)
     this.pendingEffects = []
     this.completedObservations = []
     this.callbacks = []
     this.networks = networks
     this.startTime = Date.now()
     this.lastCallbackId = 1
+  }
+
+  assertUniqueness (networks: NetworkMap) {
+    const nodeIds = _.chain(networks).values().map(n => n.nodes).flatten().value()
+    const frequencies = _.countBy(nodeIds)
+    const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
+    if (dupes.length > 0) {
+      const msg = `There are ${dupes.length} non-unique node IDs specified in the Waiter creation: ${JSON.stringify(dupes)}`
+      throw new Error(msg)
+    }
   }
 
   registerCallback (cb: AwaitCallback) {
@@ -110,7 +121,7 @@ export class Waiter {
   }
 
   checkCompletion () {
-    const grouped = groupBy(this.pendingEffects, e => e.targetNode)
+    const grouped = _.groupBy(this.pendingEffects, e => e.targetNode)
     this.callbacks = this.callbacks.filter(({
       nodes, resolve, softTimeout, hardTimeout, id
     }) => {
