@@ -65,14 +65,14 @@ export class Waiter {
     const frequencies = _.countBy(nodeIds)
     const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
     if (dupes.length > 0) {
-      logger.debug('found dupes:', nodeIds)
+      logger.debug('found dupes: %j', nodeIds)
       const msg = `There are ${dupes.length} non-unique node IDs specified in the Waiter creation: ${JSON.stringify(dupes)}`
       throw new Error(msg)
     }
   }
 
   registerCallback (cb: AwaitCallback) {
-    logger.silly('rrrrrrrrrrREGISTERING callback with', this.pendingEffects.length, 'pending')
+    logger.silly('rrrrrrrrrrREGISTERING callback with %n pending', this.pendingEffects.length)
     if (this.pendingEffects.length > 0) {
       // make it wait
       const tickingCallback = Object.assign({}, cb, {
@@ -90,18 +90,21 @@ export class Waiter {
   handleObservation (o: Observation) {
     this.consumeObservation(o)
     this.expandObservation(o)
-    logger.silly(colors.yellow('wwwwwwwwwwwwwwwwwwwWAITING ON THIS MANY: '), this.pendingEffects.length)
-    logger.silly(colors.yellow('last signal:'))
-    logger.silly(o)
-    logger.silly(colors.yellow('pending effects:'))
-    logger.silly(this.pendingEffects)
-    logger.silly(colors.yellow('callbacks:'), this.callbacks.length)
+    logger.debug(colors.yellow('last signal:'))
+    logger.debug('%j', o)
+    logger.debug(colors.yellow(`pending effects: (${this.pendingEffects.length} total)`))
+    logger.debug('%j', this.pendingEffects)
+    logger.debug(colors.yellow('callbacks: ${this.callbacks.length} total'))
     this.checkCompletion()
   }
 
   consumeObservation (o: Observation) {
     const wasNotEmpty = this.pendingEffects.length > 0
     this.pendingEffects = this.pendingEffects.filter(({event, targetNode}) => {
+      logger.silly('current event: %j', o.signal.event)
+      logger.silly('pending event: %j', event)
+      logger.silly('current node: %s', o.node)
+      logger.silly('pending node: %s', targetNode)
       const matches = o.signal.event === event && o.node === targetNode
       if (matches) {
         // side effect in a filter, but it works
@@ -136,7 +139,7 @@ export class Waiter {
         resolve()
         clearTimeout(softTimeout)
         clearTimeout(hardTimeout)
-        logger.silly('resollllllved callback id:', id)
+        logger.silly('resollllllved callback id: %s', id)
       }
       return !completed
     })
