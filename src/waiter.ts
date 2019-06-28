@@ -15,8 +15,8 @@ import {
 import logger from './logger'
 
 
-const SOFT_TIMEOUT_MS = 16000
-const HARD_TIMEOUT_MS = 60000
+const SOFT_TIMEOUT_MS = 8000
+const HARD_TIMEOUT_MS = 90000
 
 type InstrumentedObservation = {
   observation: Observation,
@@ -146,7 +146,8 @@ export class Waiter {
   }
 
   timeoutDump = () => {
-    console.log("Still waiting on the following", colors.red('' + this.pendingEffects.length), "signal(s):")
+    console.log("Processed", colors.red('' + this.completedObservations.length), "signal(s) so far, but")
+    console.log("still waiting on the following", colors.red('' + this.pendingEffects.length), "signal(s):")
     console.log(this.pendingEffects)
   }
 
@@ -164,8 +165,12 @@ export class Waiter {
 
 
   onHardTimeout = (cb: AwaitCallback) => () => {
+    const observations = this.completedObservations.map(o => o.observation)
     console.log(colors.red("vvvv  hachiko timed out!  vvvv"))
     this.timeoutDump()
+    console.log(colors.red("------------------------------"))
+    console.log(colors.red(`Successfully handled ${this.completedObservations.length} observations:`))
+    console.log(JSON.stringify(observations, null, 2))
     console.log(colors.red("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"))
     if (cb.reject) {
       cb.reject("hachiko timeout")
