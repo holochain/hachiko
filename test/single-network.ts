@@ -1,14 +1,9 @@
 import * as sinon from 'sinon'
 
-import {Waiter} from '../src/waiter'
-import {FullSyncNetwork} from '../src/network'
-import {test, resolved, rejected, notCalled} from './common'
+import {FullSyncNetwork, Waiter} from '../src/index'
+import {test, observation, signal, pending, testCallback, resolved, rejected, notCalled} from './common'
 
 const agents = ['autumn', 'mara', 'jill']
-const observation = (node, signal) => ({node, signal, dna: 'testnet'})
-const signal = (event, pending) => ({event, pending})
-const pending = (group, event) => ({group, event})
-const testCallback = (nodes) => ({resolve: sinon.spy(), reject: sinon.spy(), nodes})
 const testWaiter = () => {
   const network = new FullSyncNetwork(agents)
   const waiter = new Waiter({testnet: network})
@@ -46,11 +41,11 @@ test('soft timeout has no effect', t => {
   const cb0 = testCallback(null)
 
   waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
-  waiter.registerCallback(cb0)
+  const tc0 = waiter.registerCallback(cb0)!
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
-  waiter.onSoftTimeout(cb0)()
+  tc0.onSoftTimeout()
   waiter.handleObservation(observation('jill', signal('y', [])))
   resolved(t, cb0)
   t.end()
@@ -61,11 +56,11 @@ test('hard timeout causes rejection', t => {
   const cb0 = testCallback(null)
 
   waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
-  waiter.registerCallback(cb0)
+  const tc0 = waiter.registerCallback(cb0)!
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
-  waiter.onHardTimeout(cb0)()
+  tc0.onHardTimeout()
   rejected(t, cb0)
   waiter.handleObservation(observation('jill', signal('y', [])))
   // NB: cb0.resolve() will have been called here. There is no guarantee that after a rejection,

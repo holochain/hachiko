@@ -13,29 +13,17 @@ import {
 } from './network'
 
 import logger from './logger'
+import {CallbackData, TimedCallback} from './callback'
 
 
-const SOFT_TIMEOUT_MS = 8000
-const HARD_TIMEOUT_MS = 90000
+const DEFAULT_SOFT_TIMEOUT_MS = 8000
+const DEFAULT_HARD_TIMEOUT_MS = 90000
 
 type InstrumentedObservation = {
   observation: Observation,
   stats: {
     timestamp: number
   }
-}
-
-type AwaitCallback = {
-  nodes: Array<NodeId> | null,
-  resolve: () => void,
-  reject?: (any) => void,
-  called?: boolean,
-}
-
-type AwaitCallbackWithTimeout = AwaitCallback & {
-  softTimeout: any,
-  hardTimeout: any,
-  id: number,
 }
 
 export type NetworkMap = {[name: string]: NetworkModel}
@@ -45,12 +33,14 @@ export class Waiter {
   networks: NetworkMap
   complete: Promise<null>
   startTime: number
-  callbacks: Array<AwaitCallbackWithTimeout>
+  callbacks: Array<TimedCallback>
   lastCallbackId: number
+  timeoutSettings: {softDuration: number, hardDuration: number}
 
   completedObservations: Array<InstrumentedObservation>
 
-  constructor(networks: NetworkMap) {
+  constructor(networks: NetworkMap, opts?) {
+    opts = opts || {}
     this.assertUniqueness(networks)
     this.pendingEffects = []
     this.completedObservations = []
@@ -58,6 +48,10 @@ export class Waiter {
     this.networks = networks
     this.startTime = Date.now()
     this.lastCallbackId = 1
+    this.timeoutSettings = {
+      softDuration: opts.softTimeout || DEFAULT_SOFT_TIMEOUT_MS,
+      hardDuration: opts.hardTimeout || DEFAULT_HARD_TIMEOUT_MS,
+    }
   }
 
   assertUniqueness (networks: NetworkMap) {
@@ -71,17 +65,14 @@ export class Waiter {
     }
   }
 
-  registerCallback (cb: AwaitCallback) {
+  registerCallback (cb: CallbackData) {
     logger.silly('rrrrrrrrrrREGISTERING callback with %n pending', this.pendingEffects.length)
     if (this.pendingEffects.length > 0) {
       // make it wait
-      const tickingCallback = Object.assign({}, cb, {
-        softTimeout: null,
-        hardTimeout: null,
-        id: this.lastCallbackId++
-      })
-      this.setTimers(tickingCallback)
-      this.callbacks.push(tickingCallback)
+      const timedCallback = new TimedCallback(this, cb)
+      timedCallback.setTimers()
+      this.callbacks.push(timedCallback)
+      return timedCallback
     } else {
       // nothing to wait for
       cb.resolve()
@@ -130,66 +121,23 @@ export class Waiter {
 
   updateTimers (o: Observation) {
     this.callbacks
-      .filter(cb => !cb.nodes || cb.nodes.includes(o.node))
-      .forEach(cb => this.setTimers(cb))
+      .filter(tc => !tc.cb.nodes || tc.cb.nodes.includes(o.node))
+      .forEach(tc => tc.setTimers())
   }
 
   checkCompletion () {
     const grouped = _.groupBy(this.pendingEffects, e => e.targetNode)
-    this.callbacks = this.callbacks.filter(cb => {
-      const {nodes, resolve, id} = cb
+    this.callbacks = this.callbacks.filter(tc => {
+      const {id, cb: {nodes, resolve}} = tc
       const completed = nodes
         ? nodes.every(nodeId => !(nodeId in grouped) || grouped[nodeId].length === 0)
         : this.pendingEffects.length === 0
       if (completed) {
-        this.clearTimers(cb)
+        tc.clearTimers()
         resolve()
         logger.silly('resolved callback id: %s', id)
       }
       return !completed
     })
-  }
-
-  setTimers (cb: AwaitCallbackWithTimeout): void {
-    this.clearTimers(cb)
-    cb.softTimeout = setTimeout(this.onSoftTimeout(cb), SOFT_TIMEOUT_MS)
-    cb.hardTimeout = setTimeout(this.onHardTimeout(cb), HARD_TIMEOUT_MS)
-  }
-
-  clearTimers (cb: AwaitCallbackWithTimeout): void {
-    clearTimeout(cb.softTimeout)
-    clearTimeout(cb.hardTimeout)
-  }
-
-  timeoutDump = () => {
-    console.log("Processed", colors.red('' + this.completedObservations.length), "signal(s) so far, but")
-    console.log("still waiting on the following", colors.red('' + this.pendingEffects.length), "signal(s):")
-    console.log(this.pendingEffects)
-  }
-
-  onSoftTimeout = (cb: AwaitCallback) => () => {
-    console.log(colors.yellow("vvvv    hachiko warning    vvvv"))
-    console.log(
-      colors.yellow("a hachiko callback has been waiting for"),
-      colors.yellow.underline(`${SOFT_TIMEOUT_MS / 1000} seconds`),
-      colors.yellow("with no change"),
-    )
-    this.timeoutDump()
-    console.log(colors.yellow("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"))
-  }
-
-  onHardTimeout = (cb: AwaitCallback) => () => {
-    const observations = this.completedObservations.map(o => o.observation)
-    console.log(colors.red("vvvv  hachiko timed out!  vvvv"))
-    this.timeoutDump()
-    console.log(colors.red("------------------------------"))
-    console.log(colors.red(`Successfully handled ${this.completedObservations.length} observations:`))
-    console.log(JSON.stringify(observations, null, 2))
-    console.log(colors.red("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"))
-    if (cb.reject) {
-      cb.reject("hachiko timeout")
-    } else {
-      throw new Error("hachiko timeout!!")
-    }
   }
 }

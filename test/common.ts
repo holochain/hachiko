@@ -1,8 +1,8 @@
 import * as tape from 'tape'
 import * as sinon from 'sinon'
 
-export const test = (desc, f) => {
-  tape(desc, t => {
+const runTest = runner => (desc, f) => {
+  runner(desc, t => {
     // smush sinon.assert and tape API into a single object
     const s = sinon.assert
     s.pass = t.pass
@@ -10,6 +10,18 @@ export const test = (desc, f) => {
     f(Object.assign({}, t, s))
   })
 }
+
+export const test: any = runTest(tape)
+test.only = runTest(tape.only)
+
+export const observation = (node, signal) => ({node, signal, dna: 'testnet'})
+export const signal = (event, pending) => ({event, pending})
+export const pending = (group, event) => ({group, event})
+export const testCallback = (nodes) => ({
+  resolve: sinon.spy(),
+  reject: sinon.spy(),
+  nodes
+})
 
 
 export const resolved = (t, cb) => {

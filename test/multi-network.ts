@@ -1,8 +1,6 @@
 import * as _ from 'lodash'
 
-import {Waiter} from '../src/waiter'
-import {FullSyncNetwork} from '../src/network'
-import {DnaId} from '../src/elements'
+import {DnaId, FullSyncNetwork, Waiter} from '../src/index'
 import {test} from './common'
 
 const nodes = {
