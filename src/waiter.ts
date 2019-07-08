@@ -70,7 +70,7 @@ export class Waiter {
     if (this.pendingEffects.length > 0) {
       // make it wait
       const timedCallback = new TimedCallback(this, cb)
-      timedCallback.setTimers()
+      timedCallback.initTimers()
       this.callbacks.push(timedCallback)
       return timedCallback
     } else {
@@ -88,6 +88,7 @@ export class Waiter {
     logger.debug('%j', this.pendingEffects)
     logger.debug(colors.yellow('callbacks: ${this.callbacks.length} total'))
     this.checkCompletion()
+    this.updateTimers(o)
   }
 
   consumeObservation (o: Observation) {

@@ -1,4 +1,4 @@
-
+import * as _ from 'lodash'
 import * as colors from 'colors'
 
 import {NodeId} from './elements'
@@ -31,6 +31,15 @@ export class TimedCallback {
     this.softInterval = null
     this.hardInterval = null
   }
+
+  totalPending (tc: TimedCallback) {
+    const {id, cb: {nodes, resolve}} = tc
+    const grouped = _.groupBy(this.waiter.pendingEffects, e => e.targetNode)
+    return nodes
+      ? nodes.reduce((sum, nodeId) => sum + (nodeId in grouped ? grouped[nodeId].length : 0))
+      : this.waiter.pendingEffects.length
+  }
+
 
   timeoutDump () {
     console.log("Processed", colors.red('' + this.waiter.completedObservations.length), "signal(s) so far, but")
@@ -70,13 +79,19 @@ export class TimedCallback {
   }
 
   setTimers (): void {
-    this.clearTimers()
-    this.softInterval = setTimeout(this.onSoftTimeout.bind(this), this.waiter.timeoutSettings.softDuration)
-    this.hardInterval = setTimeout(this.onHardTimeout.bind(this), this.waiter.timeoutSettings.hardDuration)
+    if (this.softInterval || this.hardInterval) {
+      this.clearTimers()
+      this.initTimers()
+    }
   }
 
   clearTimers (): void {
     clearTimeout(this.softInterval)
     clearTimeout(this.hardInterval)
+  }
+
+  initTimers (): void {
+    this.softInterval = setTimeout(this.onSoftTimeout.bind(this), this.waiter.timeoutSettings.softDuration)
+    this.hardInterval = setTimeout(this.onHardTimeout.bind(this), this.waiter.timeoutSettings.hardDuration)
   }
 }
