@@ -15,6 +15,9 @@ export type CallbackData = {
 
 
 export class TimedCallback {
+
+  static _lastId: number
+
   // the Waiter that issued this timed callback
   waiter: any
 
@@ -30,16 +33,16 @@ export class TimedCallback {
     this.waiter = waiter
     this.softInterval = null
     this.hardInterval = null
+    this.id = TimedCallback._lastId++
   }
 
-  totalPending (tc: TimedCallback) {
-    const {id, cb: {nodes, resolve}} = tc
+  totalPending () {
+    const {id, cb: {nodes, resolve}} = this
     const grouped = _.groupBy(this.waiter.pendingEffects, e => e.targetNode)
     return nodes
-      ? nodes.reduce((sum, nodeId) => sum + (nodeId in grouped ? grouped[nodeId].length : 0))
+      ? nodes.reduce((sum, nodeId) => sum + (nodeId in grouped ? grouped[nodeId].length : 0), 0)
       : this.waiter.pendingEffects.length
   }
-
 
   timeoutDump () {
     console.log("Processed", colors.red('' + this.waiter.completedObservations.length), "signal(s) so far, but")
@@ -91,7 +94,9 @@ export class TimedCallback {
   }
 
   initTimers (): void {
-    this.softInterval = setTimeout(this.onSoftTimeout.bind(this), this.waiter.timeoutSettings.softDuration)
-    this.hardInterval = setTimeout(this.onHardTimeout.bind(this), this.waiter.timeoutSettings.hardDuration)
+    this.softInterval = setTimeout(() => this.onSoftTimeout(), this.waiter.timeoutSettings.softDuration)
+    this.hardInterval = setTimeout(() => this.onHardTimeout(), this.waiter.timeoutSettings.hardDuration)
   }
 }
+
+TimedCallback._lastId = 1

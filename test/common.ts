@@ -17,22 +17,31 @@ test.only = runTest(tape.only)
 export const observation = (node, signal) => ({node, signal, dna: 'testnet'})
 export const signal = (event, pending) => ({event, pending})
 export const pending = (group, event) => ({group, event})
-export const testCallback = (nodes) => ({
-  resolve: sinon.spy(),
-  reject: sinon.spy(),
-  nodes
-})
+export const testCallbackRealTimeout = (waiter, nodes) => {
+  const cb = waiter.registerCallback({
+    resolve: sinon.spy(),
+    reject: sinon.spy(),
+    nodes
+  })
+  return cb
+}
+export const testCallback = (waiter, nodes) => {
+  const cb = testCallbackRealTimeout(waiter, nodes)
+  cb.onSoftTimeout = sinon.spy()
+  cb.onHardTimeout = sinon.spy()
+  return cb
+}
 
 
-export const resolved = (t, cb) => {
-  t.calledOnce(cb.resolve)
-  t.notCalled(cb.reject)
+export const resolved = (t, tc) => {
+  t.calledOnce(tc.cb.resolve)
+  t.notCalled(tc.cb.reject)
 }
-export const rejected = (t, cb) => {
-  t.notCalled(cb.resolve)
-  t.calledOnce(cb.reject)
+export const rejected = (t, tc) => {
+  t.notCalled(tc.cb.resolve)
+  t.calledOnce(tc.cb.reject)
 }
-export const notCalled = (t, cb) => {
-  t.notCalled(cb.resolve)
-  t.notCalled(cb.reject)
+export const notCalled = (t, tc) => {
+  t.notCalled(tc.cb.resolve)
+  t.notCalled(tc.cb.reject)
 }

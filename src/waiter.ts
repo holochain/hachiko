@@ -67,19 +67,20 @@ export class Waiter {
 
   registerCallback (cb: CallbackData) {
     logger.silly('rrrrrrrrrrREGISTERING callback with %n pending', this.pendingEffects.length)
+    const timedCallback = new TimedCallback(this, cb)
     if (this.pendingEffects.length > 0) {
       // make it wait
-      const timedCallback = new TimedCallback(this, cb)
       timedCallback.initTimers()
       this.callbacks.push(timedCallback)
-      return timedCallback
     } else {
       // nothing to wait for
       cb.resolve()
     }
+    return timedCallback
   }
 
   handleObservation (o: Observation) {
+    const pendingBefore = this.totalPendingByCallbackId()
     this.consumeObservation(o)
     this.expandObservation(o)
     logger.debug(colors.yellow('last signal:'))
@@ -87,8 +88,7 @@ export class Waiter {
     logger.debug(colors.yellow(`pending effects: (${this.pendingEffects.length} total)`))
     logger.debug('%j', this.pendingEffects)
     logger.debug(colors.yellow('callbacks: ${this.callbacks.length} total'))
-    this.checkCompletion()
-    this.updateTimers(o)
+    this.checkCompletion(pendingBefore)
   }
 
   consumeObservation (o: Observation) {
@@ -112,6 +112,15 @@ export class Waiter {
     })
   }
 
+  totalPendingByCallbackId () {
+    return _.fromPairs(
+      this.callbacks.map(tc => [
+        tc.id,
+        tc.totalPending()
+      ])
+    )
+  }
+
   expandObservation (o: Observation) {
     if (!(o.dna in this.networks)) {
       throw new Error(`Attempting to process observation from unrecognized network '${o.dna}'`)
@@ -120,23 +129,19 @@ export class Waiter {
     this.pendingEffects = this.pendingEffects.concat(effects)
   }
 
-  updateTimers (o: Observation) {
-    this.callbacks
-      .filter(tc => !tc.cb.nodes || tc.cb.nodes.includes(o.node))
-      .forEach(tc => tc.setTimers())
-  }
-
-  checkCompletion () {
+  checkCompletion (pendingBefore) {
     const grouped = _.groupBy(this.pendingEffects, e => e.targetNode)
     this.callbacks = this.callbacks.filter(tc => {
-      const {id, cb: {nodes, resolve}} = tc
-      const completed = nodes
-        ? nodes.every(nodeId => !(nodeId in grouped) || grouped[nodeId].length === 0)
-        : this.pendingEffects.length === 0
+      const {id, cb: {resolve}} = tc
+      const pending = tc.totalPending()
+      const completed = pending === 0
+      const decreased = pending < pendingBefore[tc.id]
       if (completed) {
         tc.clearTimers()
         resolve()
         logger.silly('resolved callback id: %s', id)
+      } else if (decreased) {
+        tc.setTimers()
       }
       return !completed
     })
