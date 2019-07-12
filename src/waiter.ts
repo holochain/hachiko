@@ -26,6 +26,18 @@ type InstrumentedObservation = {
   }
 }
 
+type TimeoutSettings = {
+  softDuration: number,
+  hardDuration: number,
+  strict: boolean
+}
+
+type WaiterOptions = {
+  softTimeout?: number,
+  hardTimeout?: number,
+  strict?: boolean
+}
+
 export type NetworkMap = {[name: string]: NetworkModel}
 
 export class Waiter {
@@ -35,11 +47,11 @@ export class Waiter {
   startTime: number
   callbacks: Array<TimedCallback>
   lastCallbackId: number
-  timeoutSettings: {softDuration: number, hardDuration: number}
+  timeoutSettings: TimeoutSettings
 
   completedObservations: Array<InstrumentedObservation>
 
-  constructor(networks: NetworkMap, opts?) {
+  constructor(networks: NetworkMap, opts?: WaiterOptions) {
     opts = opts || {}
     this.assertUniqueness(networks)
     this.pendingEffects = []
@@ -51,6 +63,7 @@ export class Waiter {
     this.timeoutSettings = {
       softDuration: opts.softTimeout || DEFAULT_SOFT_TIMEOUT_MS,
       hardDuration: opts.hardTimeout || DEFAULT_HARD_TIMEOUT_MS,
+      strict: opts.strict || false
     }
   }
 

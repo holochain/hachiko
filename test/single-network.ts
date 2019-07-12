@@ -14,9 +14,13 @@ import {
 } from './common'
 
 const agents = ['autumn', 'mara', 'jill']
-const testWaiter = () => {
+const testWaiter = (opts?) => {
+  const options = Object.assign({}, opts || {}, {
+    softTimeout: 500,
+    hardTimeout: 1000,
+  })
   const network = new FullSyncNetwork(agents)
-  const waiter = new Waiter({testnet: network})
+  const waiter = new Waiter({testnet: network}, options)
   return waiter
 }
 
@@ -57,8 +61,24 @@ test('soft timeout has no effect', t => {
   t.end()
 })
 
-test('hard timeout causes rejection', t => {
+test('hard timeout has no effect in non-strict mode', t => {
   const waiter = testWaiter()
+
+  waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
+  const cb0 = testCallbackRealTimeout(waiter, null)
+  waiter.handleObservation(observation('autumn', signal('z', [])))
+  notCalled(t, cb0)
+
+  cb0.onHardTimeout()
+  notCalled(t, cb0)
+
+  // handle this observation just so the test can end
+  waiter.handleObservation(observation('jill', signal('y', [])))
+  t.end()
+})
+
+test('hard timeout causes rejection in strict mode', t => {
+  const waiter = testWaiter({strict: true})
 
   waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
   const cb0 = testCallbackRealTimeout(waiter, null)

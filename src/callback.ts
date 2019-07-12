@@ -74,10 +74,12 @@ export class TimedCallback {
     console.log(colors.red(`Successfully handled ${this.waiter.completedObservations.length} observations:`))
     console.log(JSON.stringify(observations, null, 2))
     console.log(colors.red("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"))
-    if (this.cb.reject) {
-      this.cb.reject("hachiko timeout")
-    } else {
-      throw new Error("hachiko timeout!!")
+    if (this.waiter.timeoutSettings.strict) {
+      if (this.cb.reject) {
+        this.cb.reject("hachiko timeout")
+      } else {
+        throw new Error("hachiko timeout!!")
+      }
     }
   }
 
