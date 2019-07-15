@@ -80,6 +80,10 @@ export class TimedCallback {
       } else {
         throw new Error("hachiko timeout!!")
       }
+    } else {
+      console.log("Since hachiko is not in strict mode, the test will resume now,")
+      console.log("even though hachiko thinks it will fail. Good luck!")
+      this.cb.resolve()
     }
   }
 

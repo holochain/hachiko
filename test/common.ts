@@ -1,6 +1,8 @@
 import * as tape from 'tape'
 import * as sinon from 'sinon'
 
+import {FullSyncNetwork, Waiter} from '../src/index'
+
 const runTest = runner => (desc, f) => {
   runner(desc, t => {
     // smush sinon.assert and tape API into a single object
@@ -13,6 +15,19 @@ const runTest = runner => (desc, f) => {
 
 export const test: any = runTest(tape)
 test.only = runTest(tape.only)
+
+export const withClock = f => {
+  return t => {
+    const clock = sinon.useFakeTimers()
+    try {
+      f(t, clock)
+    } finally {
+      clock.runAll()
+      clock.restore()
+    }
+  }
+}
+
 
 export const observation = (node, signal) => ({node, signal, dna: 'testnet'})
 export const signal = (event, pending) => ({event, pending})
@@ -30,6 +45,21 @@ export const testCallback = (waiter, nodes) => {
   cb.onSoftTimeout = sinon.spy()
   cb.onHardTimeout = sinon.spy()
   return cb
+}
+
+export const TIMEOUTS = {
+  soft: 1000,
+  hard: 10000,
+}
+
+export const testWaiter = (agents, opts?) => {
+  const options = Object.assign({}, {
+    softTimeout: TIMEOUTS.soft,
+    hardTimeout: TIMEOUTS.hard,
+  }, opts || {})
+  const network = new FullSyncNetwork(agents)
+  const waiter = new Waiter({testnet: network}, options)
+  return waiter
 }
 
 
