@@ -69,7 +69,7 @@ export class Waiter {
 
   assertUniqueness (networks: NetworkMap) {
     const nodeIds = _.chain(networks).values().map(n => n.nodes).flatten().value()
-    const frequencies = _.countBy(nodeIds)
+    const frequencies = _.countBy(nodeIds) as {[k: string]: number}
     const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
     if (dupes.length > 0) {
       logger.debug('found dupes: %j', nodeIds)
