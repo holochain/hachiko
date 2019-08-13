@@ -32,7 +32,7 @@ type TimeoutSettings = {
   strict: boolean
 }
 
-type WaiterOptions = {
+export type WaiterOptions = {
   softTimeout?: number,
   hardTimeout?: number,
   strict?: boolean
