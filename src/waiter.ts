@@ -16,8 +16,8 @@ import logger from './logger'
 import {CallbackData, TimedCallback} from './callback'
 
 
-const DEFAULT_SOFT_TIMEOUT_MS = 8000
-const DEFAULT_HARD_TIMEOUT_MS = 90000
+const DEFAULT_SOFT_TIMEOUT_MS = 5000
+const DEFAULT_HARD_TIMEOUT_MS = 12000
 
 type InstrumentedObservation = {
   observation: Observation,
