@@ -49,7 +49,7 @@ test('soft timeout has no effect', t => {
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
-  cb0.onSoftTimeout()
+  cb0._onSoftTimeout()
   waiter.handleObservation(observation('jill', signal('y', [])))
   resolved(t, cb0)
   t.end()
@@ -63,7 +63,7 @@ test('hard timeout eventually resolves in non-strict mode', withClock((t, clk) =
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
-  cb0.onHardTimeout()
+  cb0._onHardTimeout()
   resolved(t, cb0)
 
   t.end()
@@ -77,7 +77,7 @@ test('hard timeout causes rejection in strict mode', t => {
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
-  cb0.onHardTimeout()
+  cb0._onHardTimeout()
   rejected(t, cb0)
   waiter.handleObservation(observation('jill', signal('y', [])))
   // NB: cb0.resolve() will have been called here. There is no guarantee that after a rejection,

@@ -9,7 +9,7 @@
     "dev": "tsc -d -w",
     "prepare": "npm run build",
     "prepublishOnly": "npm test",
-    "test": "ts-node test"
+    "test": "ts-node test | tap-diff"
   },
   "files": [
     "lib/**/*"
@@ -24,8 +24,8 @@
   },
   "devDependencies": {
     "@types/node": "^12.7.1",
-    "faucet": "0.0.1",
     "sinon": "^7.4.1",
+    "tap-diff": "^0.1.1",
     "tape": "^4.11.0",
     "ts-node": "^8.3.0",
     "typescript": "^3.5.3"

@@ -36,14 +36,22 @@ export class NetworkModel {
   determineEffects = (o: Observation): Array<EffectConcrete> => {
     const effects: Array<EffectConcrete> = []
     for (const ea of o.signal.pending) {
-      for (const ec of this.reifyEffect(o, ea)) {
+      for (const ec of this._reifyEffect(o, ea)) {
         effects.push(ec)
       }
     }
     return effects
   }
 
-  reifyEffect = (
+  /**
+   * Determine which nodes are validators for a particular Entry,
+   * based on the action (which should have a reference to the entry)
+   */
+  validators = (event: Event): Array<NodeId> => {
+    throw "abstract method not implemented"
+  }
+
+  _reifyEffect = (
     {node, signal}: Observation,
     {event, group}: EffectAbstract
   ): Array<EffectConcrete> => {
@@ -56,14 +64,6 @@ export class NetworkModel {
     } else {
       throw `unknown EffectGroup: ${group}`
     }
-  }
-
-  /**
-   * Determine which nodes are validators for a particular Entry,
-   * based on the action (which should have a reference to the entry)
-   */
-  validators = (event: Event): Array<NodeId> => {
-    throw "abstract method not implemented"
   }
 
 }

@@ -42,8 +42,8 @@ export const testCallbackRealTimeout = (waiter, nodes) => {
 }
 export const testCallback = (waiter, nodes) => {
   const cb = testCallbackRealTimeout(waiter, nodes)
-  cb.onSoftTimeout = sinon.spy()
-  cb.onHardTimeout = sinon.spy()
+  cb._onSoftTimeout = sinon.spy()
+  cb._onHardTimeout = sinon.spy()
   return cb
 }
 

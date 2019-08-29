@@ -53,7 +53,7 @@ export class Waiter {
 
   constructor(networks: NetworkMap, opts?: WaiterOptions) {
     opts = opts || {}
-    this.assertUniqueness(networks)
+    this._assertUniqueness(networks)
     this.pendingEffects = []
     this.completedObservations = []
     this.callbacks = []
@@ -64,17 +64,6 @@ export class Waiter {
       softDuration: opts.softTimeout || DEFAULT_SOFT_TIMEOUT_MS,
       hardDuration: opts.hardTimeout || DEFAULT_HARD_TIMEOUT_MS,
       strict: opts.strict || false
-    }
-  }
-
-  assertUniqueness (networks: NetworkMap) {
-    const nodeIds = _.chain(networks).values().map(n => n.nodes).flatten().value()
-    const frequencies = _.countBy(nodeIds) as {[k: string]: number}
-    const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
-    if (dupes.length > 0) {
-      logger.debug('found dupes: %j', nodeIds)
-      const msg = `There are ${dupes.length} non-unique node IDs specified in the Waiter creation: ${JSON.stringify(dupes)}`
-      throw new Error(msg)
     }
   }
 
@@ -93,18 +82,18 @@ export class Waiter {
   }
 
   handleObservation (o: Observation) {
-    const pendingBefore = this.totalPendingByCallbackId()
-    this.consumeObservation(o)
-    this.expandObservation(o)
+    const pendingBefore = this._totalPendingByCallbackId()
+    this._consumeObservation(o)
+    this._expandObservation(o)
     logger.debug(colors.yellow('last signal:'))
     logger.debug('%j', o)
     logger.debug(colors.yellow(`pending effects: (${this.pendingEffects.length} total)`))
     logger.debug('%j', this.pendingEffects)
     logger.debug(colors.yellow('callbacks: ${this.callbacks.length} total'))
-    this.checkCompletion(pendingBefore)
+    this._checkCompletion(pendingBefore)
   }
 
-  consumeObservation (o: Observation) {
+  _consumeObservation (o: Observation) {
     const wasNotEmpty = this.pendingEffects.length > 0
     this.pendingEffects = this.pendingEffects.filter(({event, targetNode}) => {
       logger.silly('current event: %j', o.signal.event)
@@ -125,7 +114,7 @@ export class Waiter {
     })
   }
 
-  totalPendingByCallbackId () {
+  _totalPendingByCallbackId () {
     return _.fromPairs(
       this.callbacks.map(tc => [
         tc.id,
@@ -134,7 +123,7 @@ export class Waiter {
     )
   }
 
-  expandObservation (o: Observation) {
+  _expandObservation (o: Observation) {
     if (!(o.dna in this.networks)) {
       throw new Error(`Attempting to process observation from unrecognized network '${o.dna}'`)
     }
@@ -142,7 +131,7 @@ export class Waiter {
     this.pendingEffects = this.pendingEffects.concat(effects)
   }
 
-  checkCompletion (pendingBefore) {
+  _checkCompletion (pendingBefore) {
     const grouped = _.groupBy(this.pendingEffects, e => e.targetNode)
     this.callbacks = this.callbacks.filter(tc => {
       const {id, cb: {resolve}} = tc
@@ -158,5 +147,16 @@ export class Waiter {
       }
       return !completed
     })
+  }
+
+  _assertUniqueness (networks: NetworkMap) {
+    const nodeIds = _.chain(networks).values().map(n => n.nodes).flatten().value()
+    const frequencies = _.countBy(nodeIds) as {[k: string]: number}
+    const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
+    if (dupes.length > 0) {
+      logger.debug('found dupes: %j', nodeIds)
+      const msg = `There are ${dupes.length} non-unique node IDs specified in the Waiter creation: ${JSON.stringify(dupes)}`
+      throw new Error(msg)
+    }
   }
 }

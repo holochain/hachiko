@@ -44,24 +44,41 @@ export class TimedCallback {
       : this.waiter.pendingEffects.length
   }
 
-  timeoutDump () {
+  setTimers (): void {
+    if (this.softInterval || this.hardInterval) {
+      this.clearTimers()
+      this.initTimers()
+    }
+  }
+
+  clearTimers (): void {
+    clearTimeout(this.softInterval)
+    clearTimeout(this.hardInterval)
+  }
+
+  initTimers (): void {
+    this.softInterval = setTimeout(() => this._onSoftTimeout(), this.waiter.timeoutSettings.softDuration)
+    this.hardInterval = setTimeout(() => this._onHardTimeout(), this.waiter.timeoutSettings.hardDuration)
+  }
+  
+  _timeoutDump () {
     console.log("Processed", colors.red('' + this.waiter.completedObservations.length), "signal(s) so far, but")
     console.log("still waiting on the following", colors.red('' + this.waiter.pendingEffects.length), "signal(s):")
     console.log(this.waiter.pendingEffects)
   }
 
-  onSoftTimeout () {
+  _onSoftTimeout () {
     console.log(colors.yellow("vvvv    hachiko warning    vvvv"))
     console.log(
       colors.yellow("a hachiko callback has been waiting for"),
       colors.yellow.underline(`${this.waiter.timeoutSettings.softDuration / 1000} seconds`),
       colors.yellow("with no change"),
     )
-    this.timeoutDump()
+    this._timeoutDump()
     console.log(colors.yellow("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"))
   }
 
-  onHardTimeout () {
+  _onHardTimeout () {
     const observations = this.waiter.completedObservations.map(o => o.observation)
     console.log(colors.red("vvvv  hachiko timed out!  vvvv"))
     console.log(
@@ -69,7 +86,7 @@ export class TimedCallback {
       colors.red.underline(`${this.waiter.timeoutSettings.hardDuration / 1000} seconds`),
       colors.red("with no change"),
     )
-    this.timeoutDump()
+    this._timeoutDump()
     console.log(colors.red("------------------------------"))
     console.log(colors.red(`Successfully handled ${this.waiter.completedObservations.length} observations:`))
     console.log(JSON.stringify(observations, null, 2))
@@ -85,23 +102,6 @@ export class TimedCallback {
       console.log("even though hachiko thinks it will fail. Good luck!")
       this.cb.resolve()
     }
-  }
-
-  setTimers (): void {
-    if (this.softInterval || this.hardInterval) {
-      this.clearTimers()
-      this.initTimers()
-    }
-  }
-
-  clearTimers (): void {
-    clearTimeout(this.softInterval)
-    clearTimeout(this.hardInterval)
-  }
-
-  initTimers (): void {
-    this.softInterval = setTimeout(() => this.onSoftTimeout(), this.waiter.timeoutSettings.softDuration)
-    this.hardInterval = setTimeout(() => this.onHardTimeout(), this.waiter.timeoutSettings.hardDuration)
   }
 }
 
