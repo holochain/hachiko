@@ -13,7 +13,7 @@ import {
 } from './network'
 
 import logger from './logger'
-import {CallbackData, TimedCallback} from './callback'
+import { CallbackData, TimedCallback } from './callback'
 
 
 const DEFAULT_SOFT_TIMEOUT_MS = 5000
@@ -38,7 +38,7 @@ export type WaiterOptions = {
   strict?: boolean
 }
 
-export type NetworkMap = {[name: string]: NetworkModel}
+export type NetworkMap = { [name: string]: NetworkModel }
 
 export class Waiter {
   pendingEffects: Array<EffectConcrete>
@@ -67,7 +67,7 @@ export class Waiter {
     }
   }
 
-  registerCallback (cb: CallbackData) {
+  registerCallback(cb: CallbackData) {
     logger.silly('rrrrrrrrrrREGISTERING callback with %n pending', this.pendingEffects.length)
     const timedCallback = new TimedCallback(this, cb)
     if (this.pendingEffects.length > 0) {
@@ -81,7 +81,7 @@ export class Waiter {
     return timedCallback
   }
 
-  handleObservation (o: Observation) {
+  handleObservation(o: Observation) {
     const pendingBefore = this._totalPendingByCallbackId()
     this._consumeObservation(o)
     this._expandObservation(o)
@@ -93,9 +93,9 @@ export class Waiter {
     this._checkCompletion(pendingBefore)
   }
 
-  _consumeObservation (o: Observation) {
+  _consumeObservation(o: Observation) {
     const wasNotEmpty = this.pendingEffects.length > 0
-    this.pendingEffects = this.pendingEffects.filter(({event, targetNode}) => {
+    this.pendingEffects = this.pendingEffects.filter(({ event, targetNode }) => {
       logger.silly('current event: %j', o.signal.event)
       logger.silly('pending event: %j', event)
       logger.silly('current node: %s', o.node)
@@ -114,7 +114,7 @@ export class Waiter {
     })
   }
 
-  _totalPendingByCallbackId () {
+  _totalPendingByCallbackId() {
     return _.fromPairs(
       this.callbacks.map(tc => [
         tc.id,
@@ -123,7 +123,7 @@ export class Waiter {
     )
   }
 
-  _expandObservation (o: Observation) {
+  _expandObservation(o: Observation) {
     if (!(o.dna in this.networks)) {
       throw new Error(`Attempting to process observation from unrecognized network '${o.dna}'`)
     }
@@ -131,10 +131,10 @@ export class Waiter {
     this.pendingEffects = this.pendingEffects.concat(effects)
   }
 
-  _checkCompletion (pendingBefore) {
+  _checkCompletion(pendingBefore) {
     const grouped = _.groupBy(this.pendingEffects, e => e.targetNode)
     this.callbacks = this.callbacks.filter(tc => {
-      const {id, cb: {resolve}} = tc
+      const { id, cb: { resolve } } = tc
       const pending = tc.totalPending()
       const completed = pending === 0
       const decreased = pending < pendingBefore[tc.id]
@@ -149,9 +149,9 @@ export class Waiter {
     })
   }
 
-  _assertUniqueness (networks: NetworkMap) {
+  _assertUniqueness(networks: NetworkMap) {
     const nodeIds = _.chain(networks).values().map(n => n.nodes).flatten().value()
-    const frequencies = _.countBy(nodeIds) as {[k: string]: number}
+    const frequencies = _.countBy(nodeIds) as { [k: string]: number }
     const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
     if (dupes.length > 0) {
       logger.debug('found dupes: %j', nodeIds)

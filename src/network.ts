@@ -18,7 +18,7 @@ export class NetworkModel {
   // // the number represents additional latency to simulate. Negative numbers mean infinite latency.
   // connectionMatrix: Array<Array<number>>
 
-  constructor (nodes: Array<NodeId>) {
+  constructor(nodes: Array<NodeId>) {
     if (nodes.some(_.negate(_.isString))) {
       console.error("NetworkModel expects an array of strings, got:", nodes)
       throw new Error("NetworkModel expects an array of strings")
@@ -52,11 +52,11 @@ export class NetworkModel {
   }
 
   _reifyEffect = (
-    {node, signal}: Observation,
-    {event, group}: EffectAbstract
+    { node, signal: _ }: Observation,
+    { event, group }: EffectAbstract
   ): Array<EffectConcrete> => {
     if (group === EffectGroup.Source) {
-      return [{event, sourceNode: node, targetNode: node}]
+      return [{ event, sourceNode: node, targetNode: node }]
     } else if (group === EffectGroup.Validators) {
       return this.validators(event).map(targetNode => (
         { event, sourceNode: node, targetNode }

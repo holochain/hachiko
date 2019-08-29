@@ -1,8 +1,8 @@
 import * as _ from 'lodash'
 import * as colors from 'colors'
 
-import {NodeId} from './elements'
-import {Waiter} from './waiter'
+import { NodeId } from './elements'
+import { Waiter } from './waiter'
 
 
 export type CallbackData = {
@@ -36,38 +36,38 @@ export class TimedCallback {
     this.id = TimedCallback._lastId++
   }
 
-  totalPending () {
-    const {id, cb: {nodes, resolve}} = this
+  totalPending() {
+    const { cb: { nodes } } = this
     const grouped = _.groupBy(this.waiter.pendingEffects, e => e.targetNode)
     return nodes
       ? nodes.reduce((sum, nodeId) => sum + (nodeId in grouped ? grouped[nodeId].length : 0), 0)
       : this.waiter.pendingEffects.length
   }
 
-  setTimers (): void {
+  setTimers(): void {
     if (this.softInterval || this.hardInterval) {
       this.clearTimers()
       this.initTimers()
     }
   }
 
-  clearTimers (): void {
+  clearTimers(): void {
     clearTimeout(this.softInterval)
     clearTimeout(this.hardInterval)
   }
 
-  initTimers (): void {
+  initTimers(): void {
     this.softInterval = setTimeout(() => this._onSoftTimeout(), this.waiter.timeoutSettings.softDuration)
     this.hardInterval = setTimeout(() => this._onHardTimeout(), this.waiter.timeoutSettings.hardDuration)
   }
-  
-  _timeoutDump () {
+
+  _timeoutDump() {
     console.log("Processed", colors.red('' + this.waiter.completedObservations.length), "signal(s) so far, but")
     console.log("still waiting on the following", colors.red('' + this.waiter.pendingEffects.length), "signal(s):")
     console.log(this.waiter.pendingEffects)
   }
 
-  _onSoftTimeout () {
+  _onSoftTimeout() {
     console.log(colors.yellow("vvvv    hachiko warning    vvvv"))
     console.log(
       colors.yellow("a hachiko callback has been waiting for"),
@@ -78,7 +78,7 @@ export class TimedCallback {
     console.log(colors.yellow("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"))
   }
 
-  _onHardTimeout () {
+  _onHardTimeout() {
     const observations = this.waiter.completedObservations.map(o => o.observation)
     console.log(colors.red("vvvv  hachiko timed out!  vvvv"))
     console.log(
