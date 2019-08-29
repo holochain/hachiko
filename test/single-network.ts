@@ -1,27 +1,28 @@
 import * as sinon from 'sinon'
 
-import {Waiter} from '../src/waiter'
-import {FullSyncNetwork} from '../src/network'
-import {test, resolved, rejected, notCalled} from './common'
+import {FullSyncNetwork, Waiter} from '../src/index'
+import {
+  test,
+  observation,
+  signal,
+  pending,
+  testCallback,
+  testCallbackRealTimeout,
+  testWaiter as makeTestWaiter,
+  resolved,
+  rejected,
+  notCalled,
+  withClock,
+} from './common'
 
 const agents = ['autumn', 'mara', 'jill']
-const observation = (node, signal) => ({node, signal, dna: 'testnet'})
-const signal = (event, pending) => ({event, pending})
-const pending = (group, event) => ({group, event})
-const testCallback = (nodes) => ({resolve: sinon.spy(), reject: sinon.spy(), nodes})
-const testWaiter = () => {
-  const network = new FullSyncNetwork(agents)
-  const waiter = new Waiter({testnet: network})
-  return waiter
-}
+const testWaiter = (opts?) => makeTestWaiter(agents, opts)
 
 test('resolves immediately if nothing pending', t => {
   const waiter = testWaiter()
-  const cb0 = testCallback(null)
-  const cb1 = testCallback(['autumn'])
+  const cb0 = testCallback(waiter, null)
+  const cb1 = testCallback(waiter, ['autumn'])
 
-  waiter.registerCallback(cb0)
-  waiter.registerCallback(cb1)
   resolved(t, cb0)
   resolved(t, cb1)
   t.end()
@@ -29,10 +30,9 @@ test('resolves immediately if nothing pending', t => {
 
 test('resolves later if pending', t => {
   const waiter = testWaiter()
-  const cb0 = testCallback(null)
 
   waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
-  waiter.registerCallback(cb0)
+  const cb0 = testCallback(waiter, null)
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
@@ -43,29 +43,41 @@ test('resolves later if pending', t => {
 
 test('soft timeout has no effect', t => {
   const waiter = testWaiter()
-  const cb0 = testCallback(null)
 
   waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
-  waiter.registerCallback(cb0)
+  const cb0 = testCallbackRealTimeout(waiter, null)
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
-  waiter.onSoftTimeout(cb0)()
+  cb0.onSoftTimeout()
   waiter.handleObservation(observation('jill', signal('y', [])))
   resolved(t, cb0)
   t.end()
 })
 
-test('hard timeout causes rejection', t => {
+test('hard timeout eventually resolves in non-strict mode', withClock((t, clk) => {
   const waiter = testWaiter()
-  const cb0 = testCallback(null)
 
   waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
-  waiter.registerCallback(cb0)
+  const cb0 = testCallbackRealTimeout(waiter, null)
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
-  waiter.onHardTimeout(cb0)()
+  cb0.onHardTimeout()
+  resolved(t, cb0)
+
+  t.end()
+}))
+
+test('hard timeout causes rejection in strict mode', t => {
+  const waiter = testWaiter({strict: true})
+
+  waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
+  const cb0 = testCallbackRealTimeout(waiter, null)
+  waiter.handleObservation(observation('autumn', signal('z', [])))
+  notCalled(t, cb0)
+
+  cb0.onHardTimeout()
   rejected(t, cb0)
   waiter.handleObservation(observation('jill', signal('y', [])))
   // NB: cb0.resolve() will have been called here. There is no guarantee that after a rejection,
@@ -75,18 +87,22 @@ test('hard timeout causes rejection', t => {
 
 test('can resolve only for certain nodes', t => {
   const waiter = testWaiter()
-  const cb2a = testCallback(['autumn', 'jill'])
-  const cb2b = testCallback(['jill', 'mara'])
 
   waiter.handleObservation(observation('jill', signal('x', [pending('Validators', 'y')])))
-  waiter.registerCallback(cb2a)
+  const cb1 = testCallback(waiter, ['autumn', 'jill'])
+  t.equal(cb1.totalPending(), 2)
   waiter.handleObservation(observation('autumn', signal('y', [])))
-  notCalled(t, cb2a)
+  t.equal(cb1.totalPending(), 1)
+  notCalled(t, cb1)
 
-  waiter.registerCallback(cb2b)
+  const cb2 = testCallback(waiter, ['jill', 'mara'])
+  t.equal(cb2.totalPending(), 2)
+
   waiter.handleObservation(observation('jill', signal('y', [])))
-  resolved(t, cb2a)
-  notCalled(t, cb2b)
+  t.equal(cb1.totalPending(), 0)
+  t.equal(cb2.totalPending(), 1)
+  resolved(t, cb1)
+  notCalled(t, cb2)
   t.equal(waiter.pendingEffects.length, 1)
   t.deepEqual(waiter.pendingEffects[0], {
     event: 'y',
@@ -95,7 +111,9 @@ test('can resolve only for certain nodes', t => {
   })
 
   waiter.handleObservation(observation('mara', signal('y', [])))
-  t.calledOnce(cb2b.resolve)
+  t.equal(cb1.totalPending(), 0)
+  t.equal(cb2.totalPending(), 0)
+  resolved(t, cb2)
 
   t.end()
 })
