@@ -6,6 +6,7 @@ import {
   EffectGroup,
   Observation,
   NodeId,
+  DnaId,
 } from './elements'
 
 import {
@@ -94,13 +95,12 @@ export class Waiter {
   }
 
   _consumeObservation(o: Observation) {
-    const wasNotEmpty = this.pendingEffects.length > 0
-    this.pendingEffects = this.pendingEffects.filter(({ event, targetNode }) => {
+    this.pendingEffects = this.pendingEffects.filter(({ event, targetNode, dna }) => {
       logger.silly('current event: %j', o.signal.event)
       logger.silly('pending event: %j', event)
       logger.silly('current node: %s', o.node)
       logger.silly('pending node: %s', targetNode)
-      const matches = o.signal.event === event && o.node === targetNode
+      const matches = o.signal.event === event && o.node === targetNode && o.dna === dna
       if (matches) {
         // side effect in a filter, but it works
         this.completedObservations.push({
@@ -127,7 +127,7 @@ export class Waiter {
     if (!(o.dna in this.networks)) {
       throw new Error(`Attempting to process observation from unrecognized network '${o.dna}'`)
     }
-    const effects = this.networks[o.dna].determineEffects(o)
+    const effects = this.networks[o.dna].determineEffects(o).map(e => Object.assign(e, { dna: o.dna }))
     this.pendingEffects = this.pendingEffects.concat(effects)
   }
 
@@ -148,15 +148,18 @@ export class Waiter {
       return !completed
     })
   }
+}
 
-  _assertUniqueness(networks: NetworkMap) {
-    const nodeIds = _.chain(networks).values().map(n => n.nodes).flatten().value()
-    const frequencies = _.countBy(nodeIds) as { [k: string]: number }
-    const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
-    if (dupes.length > 0) {
-      logger.debug('found dupes: %j', nodeIds)
-      const msg = `There are ${dupes.length} non-unique node IDs specified in the Waiter creation: ${JSON.stringify(dupes)}`
-      throw new Error(msg)
-    }
+/**
+ * This doesn't seem necessary anymore. TODO: remove
+ */
+const _assertUniqueness = (networks: NetworkMap) => {
+  const nodeIds = _.chain(networks).values().map(n => n.nodes).flatten().value()
+  const frequencies = _.countBy(nodeIds) as { [k: string]: number }
+  const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
+  if (dupes.length > 0) {
+    logger.debug('found dupes: %j', nodeIds)
+    const msg = `There are ${dupes.length} non-unique node IDs specified in the Waiter creation: ${JSON.stringify(dupes)}`
+    throw new Error(msg)
   }
 }

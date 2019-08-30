@@ -1,6 +1,6 @@
 import * as sinon from 'sinon'
 
-import {FullSyncNetwork, Waiter} from '../src/index'
+import { FullSyncNetwork, Waiter } from '../src/index'
 import {
   test,
   observation,
@@ -70,7 +70,7 @@ test('hard timeout eventually resolves in non-strict mode', withClock((t, clk) =
 }))
 
 test('hard timeout causes rejection in strict mode', t => {
-  const waiter = testWaiter({strict: true})
+  const waiter = testWaiter({ strict: true })
 
   waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
   const cb0 = testCallbackRealTimeout(waiter, null)
@@ -106,6 +106,7 @@ test('can resolve only for certain nodes', t => {
   t.equal(waiter.pendingEffects.length, 1)
   t.deepEqual(waiter.pendingEffects[0], {
     event: 'y',
+    dna: 'testnet',
     sourceNode: 'jill',
     targetNode: 'mara',
   })
