@@ -42,25 +42,21 @@ export type WaiterOptions = {
 export type NetworkMap = { [name: string]: NetworkModel }
 
 export class Waiter {
-  pendingEffects: Array<EffectConcrete>
+  pendingEffects: Array<EffectConcrete & { dna: DnaId }>
   networks: NetworkMap
+  networkModelClass: any
   complete: Promise<null>
-  startTime: number
   callbacks: Array<TimedCallback>
-  lastCallbackId: number
   timeoutSettings: TimeoutSettings
 
   completedObservations: Array<InstrumentedObservation>
 
-  constructor(networks: NetworkMap, opts?: WaiterOptions) {
-    opts = opts || {}
-    this._assertUniqueness(networks)
+  constructor(networkModelClass, initialNetworks: NetworkMap = {}, opts: WaiterOptions = {}) {
     this.pendingEffects = []
     this.completedObservations = []
     this.callbacks = []
-    this.networks = networks
-    this.startTime = Date.now()
-    this.lastCallbackId = 1
+    this.networkModelClass = networkModelClass
+    this.networks = initialNetworks
     this.timeoutSettings = {
       softDuration: opts.softTimeout || DEFAULT_SOFT_TIMEOUT_MS,
       hardDuration: opts.hardTimeout || DEFAULT_HARD_TIMEOUT_MS,
@@ -68,8 +64,23 @@ export class Waiter {
     }
   }
 
+  addNode(networkName: string, nodeId: NodeId) {
+    if (this.networks[networkName]) {
+      this.networks[networkName].nodes.add(nodeId)
+    } else {
+      this.networks[networkName] = new this.networkModelClass([nodeId])
+    }
+  }
+
+  removeNode(networkName: string, nodeId: NodeId) {
+    if (this.networks[networkName]) {
+      this.networks[networkName].nodes.delete(nodeId)
+    }
+    // don't worry about removing networks once all nodes leave
+  }
+
   registerCallback(cb: CallbackData) {
-    logger.silly('rrrrrrrrrrREGISTERING callback with %n pending', this.pendingEffects.length)
+    logger.silly('REGISTERING callback with %n pending', this.pendingEffects.length)
     const timedCallback = new TimedCallback(this, cb)
     if (this.pendingEffects.length > 0) {
       // make it wait
@@ -154,7 +165,7 @@ export class Waiter {
  * This doesn't seem necessary anymore. TODO: remove
  */
 const _assertUniqueness = (networks: NetworkMap) => {
-  const nodeIds = _.chain(networks).values().map(n => n.nodes).flatten().value()
+  const nodeIds = _.chain(networks).values().map(n => [...n.nodes]).flatten().value()
   const frequencies = _.countBy(nodeIds) as { [k: string]: number }
   const dupes = Object.entries(frequencies).filter(([k, v]) => v > 1).map(([k, v]) => k)
   if (dupes.length > 0) {
