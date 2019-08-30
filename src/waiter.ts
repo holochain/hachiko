@@ -75,6 +75,10 @@ export class Waiter {
   removeNode(networkName: string, nodeId: NodeId) {
     if (this.networks[networkName]) {
       this.networks[networkName].nodes.delete(nodeId)
+      // remove pending effects targeted at the node being removed
+      this.pendingEffects = this.pendingEffects.filter(
+        ({ targetNode, dna }) => !(dna === networkName && nodeId === targetNode)
+      )
     }
     // don't worry about removing networks once all nodes leave
   }

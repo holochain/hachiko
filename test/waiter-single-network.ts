@@ -3,7 +3,6 @@ import * as sinon from 'sinon'
 import { FullSyncNetwork, Waiter } from '../src/index'
 import {
   test,
-  observation,
   signal,
   pending,
   testCallback,
@@ -16,6 +15,7 @@ import {
 } from './common'
 
 const agents = ['autumn', 'mara', 'jill']
+const observation = (node, signal) => ({ dna: 'testnet', node, signal })
 const testWaiter = (opts?) => makeTestWaiter(agents, opts)
 
 test('resolves immediately if nothing pending', t => {

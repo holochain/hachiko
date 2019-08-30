@@ -3,6 +3,8 @@ import * as _ from 'lodash'
 import { DnaId, FullSyncNetwork, Waiter } from '../src/index'
 import { test } from './common'
 
+// It just so happens that each network has distinct NodeIds.
+// This is not a requirement. TODO: add some duplicates
 const nodes = {
   n1: ['autumn', 'mara', 'jill'],
   n2: ['bo', 'skylar'],

@@ -2,7 +2,6 @@ import * as sinon from 'sinon'
 
 import {
   test,
-  observation,
   signal,
   pending,
   testCallback,
@@ -10,12 +9,13 @@ import {
   testWaiter as makeTestWaiter,
   TIMEOUTS
 } from './common'
-import {TimedCallback} from '../src/callback'
+import { TimedCallback } from '../src/callback'
 
 const agents = ['kristina', 'gina', 'alex']
+const observation = (node, signal) => ({ dna: 'testnet', node, signal })
 const testWaiter = (opts?) => makeTestWaiter(agents, opts)
 
-const {soft, hard} = TIMEOUTS
+const { soft, hard } = TIMEOUTS
 
 test('soft timeout fires after one observation', withClock(async (t, clk) => {
   const waiter = testWaiter()

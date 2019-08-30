@@ -29,7 +29,6 @@ export const withClock = f => {
 }
 
 
-export const observation = (node, signal) => ({ node, signal, dna: 'testnet' })
 export const signal = (event, pending) => ({ event, pending })
 export const pending = (group, event) => ({ group, event })
 export const testCallbackRealTimeout = (waiter, nodes) => {
