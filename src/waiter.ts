@@ -105,7 +105,7 @@ export class Waiter {
     logger.debug('%j', o)
     logger.debug(colors.yellow(`pending effects: (${this.pendingEffects.length} total)`))
     logger.debug('%j', this.pendingEffects)
-    logger.debug(colors.yellow('callbacks: ${this.callbacks.length} total'))
+    logger.debug(colors.yellow(`callbacks: ${this.callbacks.length} total`))
     this._checkCompletion(pendingBefore)
   }
 

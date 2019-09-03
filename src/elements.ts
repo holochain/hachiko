@@ -29,7 +29,6 @@ export type Observation = {
  * abstracted away from any particular network
  */
 export type EffectAbstract = {
-  // description: string,
   event: Event,
   group: EffectGroup
 }
@@ -39,7 +38,6 @@ export type EffectAbstract = {
  * as viewed by a particular node
  */
 export type EffectConcrete = {
-  // description: string,
   event: Event,
   sourceNode: NodeId,
   targetNode: NodeId,
