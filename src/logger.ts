@@ -1,5 +1,5 @@
-import {createLogger, format, transports} from 'winston'
-import {NullTransport} from 'winston-null'
+import { createLogger, format, transports } from 'winston'
+import { NullTransport } from 'winston-null'
 
 const logLevel = 'info'
 
@@ -17,7 +17,7 @@ const logger = createLogger({
     format.simple(),
   ),
   transports: [
-    new transports.Console({level: logLevel})
+    new transports.Console({ level: logLevel })
   ]
 })
 

@@ -1,9 +1,8 @@
 import * as sinon from 'sinon'
 
-import {FullSyncNetwork, Waiter} from '../src/index'
+import { FullSyncNetwork, Waiter } from '../src/index'
 import {
   test,
-  observation,
   signal,
   pending,
   testCallback,
@@ -16,6 +15,7 @@ import {
 } from './common'
 
 const agents = ['autumn', 'mara', 'jill']
+const observation = (node, signal) => ({ dna: 'testnet', node, signal })
 const testWaiter = (opts?) => makeTestWaiter(agents, opts)
 
 test('resolves immediately if nothing pending', t => {
@@ -49,7 +49,7 @@ test('soft timeout has no effect', t => {
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
-  cb0.onSoftTimeout()
+  cb0._onSoftTimeout()
   waiter.handleObservation(observation('jill', signal('y', [])))
   resolved(t, cb0)
   t.end()
@@ -63,21 +63,21 @@ test('hard timeout eventually resolves in non-strict mode', withClock((t, clk) =
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
-  cb0.onHardTimeout()
+  cb0._onHardTimeout()
   resolved(t, cb0)
 
   t.end()
 }))
 
 test('hard timeout causes rejection in strict mode', t => {
-  const waiter = testWaiter({strict: true})
+  const waiter = testWaiter({ strict: true })
 
   waiter.handleObservation(observation('jill', signal('x', [pending('Source', 'y')])))
   const cb0 = testCallbackRealTimeout(waiter, null)
   waiter.handleObservation(observation('autumn', signal('z', [])))
   notCalled(t, cb0)
 
-  cb0.onHardTimeout()
+  cb0._onHardTimeout()
   rejected(t, cb0)
   waiter.handleObservation(observation('jill', signal('y', [])))
   // NB: cb0.resolve() will have been called here. There is no guarantee that after a rejection,
@@ -106,6 +106,7 @@ test('can resolve only for certain nodes', t => {
   t.equal(waiter.pendingEffects.length, 1)
   t.deepEqual(waiter.pendingEffects[0], {
     event: 'y',
+    dna: 'testnet',
     sourceNode: 'jill',
     targetNode: 'mara',
   })

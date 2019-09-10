@@ -11,19 +11,16 @@ import {
 
 
 export class NetworkModel {
-  // // the total set of agents participating in the network
-  nodes: Array<NodeId>
+  // the total set of agents participating in the network
+  // it's OK to modify this
+  nodes: Set<NodeId>
 
   // // a connectivity matrix representing every possible p2p connection
   // // the number represents additional latency to simulate. Negative numbers mean infinite latency.
   // connectionMatrix: Array<Array<number>>
 
-  constructor (nodes: Array<NodeId>) {
-    if (nodes.some(_.negate(_.isString))) {
-      console.error("NetworkModel expects an array of strings, got:", nodes)
-      throw new Error("NetworkModel expects an array of strings")
-    }
-    this.nodes = nodes
+  constructor(nodes: Array<NodeId>) {
+    this.nodes = new Set(nodes)
   }
 
   /**
@@ -36,26 +33,11 @@ export class NetworkModel {
   determineEffects = (o: Observation): Array<EffectConcrete> => {
     const effects: Array<EffectConcrete> = []
     for (const ea of o.signal.pending) {
-      for (const ec of this.reifyEffect(o, ea)) {
+      for (const ec of this._reifyEffect(o, ea)) {
         effects.push(ec)
       }
     }
     return effects
-  }
-
-  reifyEffect = (
-    {node, signal}: Observation,
-    {event, group}: EffectAbstract
-  ): Array<EffectConcrete> => {
-    if (group === EffectGroup.Source) {
-      return [{event, sourceNode: node, targetNode: node}]
-    } else if (group === EffectGroup.Validators) {
-      return this.validators(event).map(targetNode => (
-        { event, sourceNode: node, targetNode }
-      ))
-    } else {
-      throw `unknown EffectGroup: ${group}`
-    }
   }
 
   /**
@@ -66,12 +48,27 @@ export class NetworkModel {
     throw "abstract method not implemented"
   }
 
+  _reifyEffect = (
+    { node, signal: _ }: Observation,
+    { event, group }: EffectAbstract
+  ): Array<EffectConcrete> => {
+    if (group === EffectGroup.Source) {
+      return [{ event, sourceNode: node, targetNode: node }]
+    } else if (group === EffectGroup.Validators) {
+      return this.validators(event).map(targetNode => (
+        { event, sourceNode: node, targetNode }
+      ))
+    } else {
+      throw `unknown EffectGroup: ${group}`
+    }
+  }
+
 }
 
 export class FullSyncNetwork extends NetworkModel {
 
   validators = (entry: Entry): Array<NodeId> => {
     // currently full-sync
-    return this.nodes
+    return Array.from(this.nodes)
   }
 }

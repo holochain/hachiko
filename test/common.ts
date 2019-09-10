@@ -1,7 +1,7 @@
 import * as tape from 'tape'
 import * as sinon from 'sinon'
 
-import {FullSyncNetwork, Waiter} from '../src/index'
+import { FullSyncNetwork, Waiter } from '../src/index'
 
 const runTest = runner => (desc, f) => {
   runner(desc, t => {
@@ -29,9 +29,8 @@ export const withClock = f => {
 }
 
 
-export const observation = (node, signal) => ({node, signal, dna: 'testnet'})
-export const signal = (event, pending) => ({event, pending})
-export const pending = (group, event) => ({group, event})
+export const signal = (event, pending) => ({ event, pending })
+export const pending = (group, event) => ({ group, event })
 export const testCallbackRealTimeout = (waiter, nodes) => {
   const cb = waiter.registerCallback({
     resolve: sinon.spy(),
@@ -42,8 +41,8 @@ export const testCallbackRealTimeout = (waiter, nodes) => {
 }
 export const testCallback = (waiter, nodes) => {
   const cb = testCallbackRealTimeout(waiter, nodes)
-  cb.onSoftTimeout = sinon.spy()
-  cb.onHardTimeout = sinon.spy()
+  cb._onSoftTimeout = sinon.spy()
+  cb._onHardTimeout = sinon.spy()
   return cb
 }
 
@@ -58,7 +57,7 @@ export const testWaiter = (agents, opts?) => {
     hardTimeout: TIMEOUTS.hard,
   }, opts || {})
   const network = new FullSyncNetwork(agents)
-  const waiter = new Waiter({testnet: network}, options)
+  const waiter = new Waiter(FullSyncNetwork, { testnet: network }, options)
   return waiter
 }
 
