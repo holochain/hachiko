@@ -89,7 +89,7 @@ export class TimedCallback {
     this._timeoutDump()
     console.log(colors.red("------------------------------"))
     console.log(colors.red(`Successfully handled ${this.waiter.completedObservations.length} observations:`))
-    console.log(JSON.stringify(observations, null, 2))
+    console.log(observations)
     console.log(colors.red("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"))
     if (this.waiter.timeoutSettings.strict) {
       if (this.cb.reject) {
