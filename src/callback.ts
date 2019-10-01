@@ -44,6 +44,10 @@ export class TimedCallback {
       : this.waiter.pendingEffects.length
   }
 
+  isCompleted(): boolean {
+    return this.totalPending() === 0 || !this.hardInterval
+  }
+
   setTimers(): void {
     if (this.softInterval || this.hardInterval) {
       this.clearTimers()
@@ -54,6 +58,8 @@ export class TimedCallback {
   clearTimers(): void {
     clearTimeout(this.softInterval)
     clearTimeout(this.hardInterval)
+    this.softInterval = null
+    this.hardInterval = null
   }
 
   initTimers(): void {
@@ -79,6 +85,7 @@ export class TimedCallback {
   }
 
   _onHardTimeout() {
+    this.clearTimers()
     const observations = this.waiter.completedObservations.map(o => o.observation)
     console.log(colors.red("vvvv  hachiko timed out!  vvvv"))
     console.log(

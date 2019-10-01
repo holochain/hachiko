@@ -151,7 +151,7 @@ export class Waiter {
     this.callbacks = this.callbacks.filter(tc => {
       const { id, cb: { resolve } } = tc
       const pending = tc.totalPending()
-      const completed = pending === 0
+      const completed = tc.isCompleted()
       const decreased = pending < pendingBefore[tc.id]
       if (completed) {
         tc.clearTimers()
