@@ -51,3 +51,37 @@ test('removing node from network also removes its pending effects', t => {
 
   t.end()
 })
+
+
+test('adding a node to the network increases pending effects', t => {
+  const waiter = new Waiter(FullSyncNetwork)
+  waiter.addNode('network', 'amanda')
+  waiter.addNode('network', 'erin')
+
+  waiter.handleObservation(observation('network', 'amanda', signal('x', [pending('Validators', 'y')])))
+  t.equal(waiter.pendingEffects.length, 1)
+
+  waiter.addNode('network', 'rose')
+  waiter.addNode('network', 'ann')
+  t.equal(waiter.pendingEffects.length, 3)
+
+  t.end()
+})
+
+test('adding a node to the network increases pending effects even when an event has been covered by others', t => {
+  const waiter = new Waiter(FullSyncNetwork)
+  waiter.addNode('network', 'amanda')
+  waiter.addNode('network', 'galen')
+
+  waiter.handleObservation(observation('network', 'amanda', signal('x', [pending('Validators', 'y')])))
+  t.equal(waiter.pendingEffects.length, 2)
+
+  waiter.handleObservation(observation('network', 'amanda', signal('y', [])))
+  waiter.handleObservation(observation('network', 'galen', signal('y', [])))
+  t.equal(waiter.pendingEffects.length, 0)
+
+  waiter.addNode('network', 'rose')
+  t.equal(waiter.pendingEffects.length, 1)
+
+  t.end()
+})
