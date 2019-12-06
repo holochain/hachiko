@@ -1,7 +1,8 @@
 import * as tape from 'tape'
 import * as sinon from 'sinon'
 
-import { FullSyncNetwork, Waiter } from '../src/index'
+import { FullSyncNetwork, Waiter, Signal, EffectAbstract } from '../src/index'
+import logger from '../src/logger'
 
 const runTest = runner => (desc, f) => {
   runner(desc, t => {
@@ -15,6 +16,10 @@ const runTest = runner => (desc, f) => {
 
 export const test: any = runTest(tape)
 test.only = runTest(tape.only)
+test.skip = runTest((desc, t) => {
+  logger.warn("Skipping test: %s", desc)
+  return tape.skip(desc, t)
+})
 
 export const withClock = f => {
   return t => {
@@ -29,8 +34,8 @@ export const withClock = f => {
 }
 
 
-export const signal = (event, pending) => ({ event, pending })
-export const pending = (group, event) => ({ group, event })
+export const signal = (event, pending): Signal => ({ event, pending })
+export const pending = (group, event): EffectAbstract => ({ group, event })
 export const testCallbackRealTimeout = (waiter, nodes) => {
   const cb = waiter.registerCallback({
     resolve: sinon.spy(),

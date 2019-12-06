@@ -2,15 +2,16 @@ import * as _ from 'lodash'
 import * as colors from 'colors'
 
 import {
-  EffectConcrete,
+  EffectAbstract,
   EffectGroup,
+  Event,
   Observation,
   NodeId,
   DnaId,
 } from './elements'
 
 import {
-  NetworkModel
+  NetworkModel, ObservedEvents
 } from './network'
 
 import logger from './logger'
@@ -39,10 +40,11 @@ export type WaiterOptions = {
   strict?: boolean
 }
 
-export type NetworkMap = { [name: string]: NetworkModel }
+export type NetworkMap = {
+  [name: string]: NetworkModel,
+}
 
 export class Waiter {
-  pendingEffects: Array<EffectConcrete & { dna: DnaId }>
   networks: NetworkMap
   networkModelClass: any
   complete: Promise<null>
@@ -52,11 +54,10 @@ export class Waiter {
   completedObservations: Array<InstrumentedObservation>
 
   constructor(networkModelClass, initialNetworks: NetworkMap = {}, opts: WaiterOptions = {}) {
-    this.pendingEffects = []
     this.completedObservations = []
     this.callbacks = []
     this.networkModelClass = networkModelClass
-    this.networks = initialNetworks
+    this.networks = _.cloneDeep(initialNetworks)
     this.timeoutSettings = {
       softDuration: opts.softTimeout || DEFAULT_SOFT_TIMEOUT_MS,
       hardDuration: opts.hardTimeout || DEFAULT_HARD_TIMEOUT_MS,
@@ -66,7 +67,7 @@ export class Waiter {
 
   addNode(networkName: string, nodeId: NodeId) {
     if (this.networks[networkName]) {
-      this.networks[networkName].nodes.add(nodeId)
+      this.networks[networkName].addNode(nodeId)
     } else {
       this.networks[networkName] = new this.networkModelClass([nodeId])
     }
@@ -74,19 +75,23 @@ export class Waiter {
 
   removeNode(networkName: string, nodeId: NodeId) {
     if (this.networks[networkName]) {
-      this.networks[networkName].nodes.delete(nodeId)
-      // remove pending effects targeted at the node being removed
-      this.pendingEffects = this.pendingEffects.filter(
-        ({ targetNode, dna }) => !(dna === networkName && nodeId === targetNode)
-      )
+      this.networks[networkName].removeNode(nodeId)
     }
     // don't worry about removing networks once all nodes leave
   }
 
+  totalEventsAwaiting(): number {
+    return _.sum(_.values(this.networks).map(model => model.numEventsAwaiting()))
+  }
+
+  eventsAwaiting(): Record<NodeId, ObservedEvents> {
+    return _.mapValues(this.networks, model => model.eventDiff())
+  }
+
   registerCallback(cb: CallbackData) {
-    logger.silly('REGISTERING callback with %n pending', this.pendingEffects.length)
+    logger.silly('REGISTERING callback with %i pending', this.totalEventsAwaiting())
     const timedCallback = new TimedCallback(this, cb)
-    if (this.pendingEffects.length > 0) {
+    if (this.totalEventsAwaiting() > 0) {
       // make it wait
       timedCallback.initTimers()
       this.callbacks.push(timedCallback)
@@ -99,34 +104,10 @@ export class Waiter {
 
   handleObservation(o: Observation) {
     const pendingBefore = this._totalPendingByCallbackId()
-    this._consumeObservation(o)
-    this._expandObservation(o)
-    logger.debug(colors.yellow('last signal:'))
-    logger.debug('%j', o)
-    logger.debug(colors.yellow(`pending effects: (${this.pendingEffects.length} total)`))
-    logger.debug('%j', this.pendingEffects)
-    logger.debug(colors.yellow(`callbacks: ${this.callbacks.length} total`))
-    this._checkCompletion(pendingBefore)
-  }
+    logger.silly("Handling observation: %j", o)
+    this.networks[o.dna].consumeSignal(o.node, o.signal)
 
-  _consumeObservation(o: Observation) {
-    this.pendingEffects = this.pendingEffects.filter(({ event, targetNode, dna }) => {
-      logger.silly('current event: %j', o.signal.event)
-      logger.silly('pending event: %j', event)
-      logger.silly('current node: %s', o.node)
-      logger.silly('pending node: %s', targetNode)
-      const matches = o.signal.event === event && o.node === targetNode && o.dna === dna
-      if (matches) {
-        // side effect in a filter, but it works
-        this.completedObservations.push({
-          observation: o,
-          stats: {
-            timestamp: Date.now()
-          }
-        })
-      }
-      return !matches
-    })
+    this._checkCompletion(pendingBefore)
   }
 
   _totalPendingByCallbackId() {
@@ -136,14 +117,6 @@ export class Waiter {
         tc.totalPending()
       ])
     )
-  }
-
-  _expandObservation(o: Observation) {
-    if (!(o.dna in this.networks)) {
-      throw new Error(`Attempting to process observation from unrecognized network '${o.dna}'`)
-    }
-    const effects = this.networks[o.dna].determineEffects(o).map(e => Object.assign(e, { dna: o.dna }))
-    this.pendingEffects = this.pendingEffects.concat(effects)
   }
 
   _checkCompletion(pendingBefore) {

@@ -38,16 +38,16 @@ test('removing node from network also removes its pending effects', t => {
   waiter.addNode('network', 'aitin')
 
   waiter.handleObservation(observation('network', 'aitin', signal('x', [pending('Validators', 'y')])))
-  t.equal(waiter.pendingEffects.length, 3)
+  t.equal(waiter.totalEventsAwaiting(), 3)
 
   waiter.removeNode('network', 'aitin')
-  t.equal(waiter.pendingEffects.length, 2)
+  t.equal(waiter.totalEventsAwaiting(), 2)
 
   waiter.removeNode('network', 'erin')
-  t.equal(waiter.pendingEffects.length, 1)
+  t.equal(waiter.totalEventsAwaiting(), 1)
 
   waiter.handleObservation(observation('network', 'erin', signal('y', [])))
-  t.equal(waiter.pendingEffects.length, 1)
+  t.equal(waiter.totalEventsAwaiting(), 1)
 
   t.end()
 })
@@ -59,11 +59,11 @@ test('adding a node to the network increases pending effects', t => {
   waiter.addNode('network', 'erin')
 
   waiter.handleObservation(observation('network', 'amanda', signal('x', [pending('Validators', 'y')])))
-  t.equal(waiter.pendingEffects.length, 1)
+  t.equal(waiter.totalEventsAwaiting(), 2)
 
   waiter.addNode('network', 'rose')
   waiter.addNode('network', 'ann')
-  t.equal(waiter.pendingEffects.length, 3)
+  t.equal(waiter.totalEventsAwaiting(), 4)
 
   t.end()
 })
@@ -74,14 +74,14 @@ test('adding a node to the network increases pending effects even when an event 
   waiter.addNode('network', 'galen')
 
   waiter.handleObservation(observation('network', 'amanda', signal('x', [pending('Validators', 'y')])))
-  t.equal(waiter.pendingEffects.length, 2)
+  t.equal(waiter.totalEventsAwaiting(), 2)
 
   waiter.handleObservation(observation('network', 'amanda', signal('y', [])))
   waiter.handleObservation(observation('network', 'galen', signal('y', [])))
-  t.equal(waiter.pendingEffects.length, 0)
+  t.equal(waiter.totalEventsAwaiting(), 0)
 
   waiter.addNode('network', 'rose')
-  t.equal(waiter.pendingEffects.length, 1)
+  t.equal(waiter.totalEventsAwaiting(), 1)
 
   t.end()
 })

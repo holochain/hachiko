@@ -1,6 +1,6 @@
 
 export type Entry = {}
-export type Event = String
+export type Event = string
 export type NodeId = string
 export type DnaId = string
 

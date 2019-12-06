@@ -1,6 +1,6 @@
 {
   "name": "@holochain/hachiko",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "A Holochain scenario test Waiter implementation in JS",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -23,6 +23,7 @@
     "winston-null": "^2.0.0"
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.149",
     "@types/node": "^12.7.1",
     "sinon": "^7.4.1",
     "tap-diff": "^0.1.1",

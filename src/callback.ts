@@ -19,7 +19,7 @@ export class TimedCallback {
   static _lastId: number
 
   // the Waiter that issued this timed callback
-  waiter: any
+  waiter: Waiter
 
   // the original CallbackData registered via registerCallback
   cb: CallbackData
@@ -40,10 +40,10 @@ export class TimedCallback {
 
   totalPending() {
     const { cb: { nodes } } = this
-    const grouped = _.groupBy(this.waiter.pendingEffects, e => e.targetNode)
-    return nodes
-      ? nodes.reduce((sum, nodeId) => sum + (nodeId in grouped ? grouped[nodeId].length : 0), 0)
-      : this.waiter.pendingEffects.length
+    if (nodes) {
+      throw new Error("Specifying specific nodes in a hachiko callback is not currently supported")
+    }
+    return this.waiter.totalEventsAwaiting()
   }
 
   isCompleted(): boolean {
@@ -71,8 +71,8 @@ export class TimedCallback {
 
   _timeoutDump() {
     console.log("Processed", colors.red('' + this.waiter.completedObservations.length), "signal(s) so far, but")
-    console.log("still waiting on the following", colors.red('' + this.waiter.pendingEffects.length), "signal(s):")
-    console.log(this.waiter.pendingEffects)
+    console.log("still waiting on the following", colors.red('' + this.waiter.totalEventsAwaiting()), "signal(s):")
+    console.log(this.waiter.eventsAwaiting())
   }
 
   _onSoftTimeout() {
