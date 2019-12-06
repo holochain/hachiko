@@ -8,8 +8,8 @@ import { Waiter } from './waiter'
 export type CallbackData = {
   // nodes to require consistency for, or all nodes if `null`
   nodes: Array<NodeId> | null,
-  resolve: () => void,
-  reject?: (any) => void,
+  resolve: (_: number) => void,
+  reject?: (_: any) => void,
   called?: boolean,
 }
 
@@ -27,6 +27,7 @@ export class TimedCallback {
   softInterval: any
   hardInterval: any
   id: number
+  numCompletedAtStart: number
 
   constructor(waiter: Waiter, cb: CallbackData) {
     this.cb = cb
@@ -34,6 +35,7 @@ export class TimedCallback {
     this.softInterval = null
     this.hardInterval = null
     this.id = TimedCallback._lastId++
+    this.numCompletedAtStart = waiter.completedObservations.length
   }
 
   totalPending() {
@@ -107,7 +109,7 @@ export class TimedCallback {
     } else {
       console.log("Since hachiko is not in strict mode, the test will resume now,")
       console.log("even though hachiko thinks it will fail. Good luck!")
-      this.cb.resolve()
+      this.cb.resolve(this.waiter.completedObservations.length - this.numCompletedAtStart)
     }
   }
 }

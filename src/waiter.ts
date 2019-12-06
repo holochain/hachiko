@@ -92,7 +92,7 @@ export class Waiter {
       this.callbacks.push(timedCallback)
     } else {
       // nothing to wait for
-      cb.resolve()
+      cb.resolve(0)
     }
     return timedCallback
   }
@@ -147,7 +147,6 @@ export class Waiter {
   }
 
   _checkCompletion(pendingBefore) {
-    const grouped = _.groupBy(this.pendingEffects, e => e.targetNode)
     this.callbacks = this.callbacks.filter(tc => {
       const { id, cb: { resolve } } = tc
       const pending = tc.totalPending()
@@ -155,7 +154,7 @@ export class Waiter {
       const decreased = pending < pendingBefore[tc.id]
       if (completed) {
         tc.clearTimers()
-        resolve()
+        resolve(this.completedObservations.length - tc.numCompletedAtStart)
         logger.silly('resolved callback id: %s', id)
       } else if (decreased) {
         tc.setTimers()
