@@ -1,7 +1,7 @@
 import { createLogger, format, transports } from 'winston'
 import { NullTransport } from 'winston-null'
 
-const logLevel = 'info'
+const logLevel = process.env.HACHIKO_LOG_LEVEL || 'info'
 
 const logger = createLogger({
   levels: {

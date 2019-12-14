@@ -1,13 +1,8 @@
 import * as _ from 'lodash'
-import * as colors from 'colors'
 
 import {
-  EffectAbstract,
-  EffectGroup,
-  Event,
   Observation,
   NodeId,
-  DnaId,
 } from './elements'
 
 import {
@@ -106,6 +101,10 @@ export class Waiter {
     const pendingBefore = this._totalPendingByCallbackId()
     logger.silly("Handling observation: %j", o)
     this.networks[o.dna].consumeSignal(o.node, o.signal)
+    this.completedObservations.push({
+      observation: o,
+      stats: { timestamp: Date.now() }
+    })
 
     this._checkCompletion(pendingBefore)
   }

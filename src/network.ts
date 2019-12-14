@@ -88,6 +88,8 @@ export class NetworkModel {
         const unresolved = nodes.filter(v => !observed.has(v))
         return [event, new Set(unresolved)]
       })
+      .filter(([x, unresolved]) => !_.isEmpty(unresolved))
+
       this.cachedDiff = _.fromPairs(frequencyPairs)
     }
     logger.debug('eventDiff: %o', this.cachedDiff)
