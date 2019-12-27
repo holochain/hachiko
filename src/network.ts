@@ -4,15 +4,19 @@ import {
   Entry,
   Event,
   EffectAbstract,
-  EffectConcrete,
   EffectGroup,
-  Observation,
   Signal,
 } from './elements'
 import logger from './logger'
 
 export type ObservedEvents = Record<Event, Set<NodeId>>
 
+/**
+ * Base class for network models, which tracks a set of Nodes in a space,
+ * and based on the history of Events seen in the network, calculates the conditions
+ * for which the network is "consistent", meaning that any node should be able to
+ * fetch what it needs from the network
+ */
 export class NetworkModel {
   // the total set of agents participating in the network
   // it's OK to modify this
@@ -21,11 +25,11 @@ export class NetworkModel {
   // Events which already happened
   observedEvents: ObservedEvents
 
-  // We can cache the result of eventDiff if no new signals have been consumed since the last call
-  cachedDiff: ObservedEvents | null
-
   // Implied events, in abstract form
   pendingEffects: Array<EffectAbstract & {node: NodeId}>
+
+  // We can cache the result of eventDiff if no new signals have been consumed since the last call
+  cachedDiff: ObservedEvents | null
 
   // // a connectivity matrix representing every possible p2p connection
   // // the number represents additional latency to simulate. Negative numbers mean infinite latency.
@@ -83,7 +87,7 @@ export class NetworkModel {
           : (group === EffectGroup.Source)
           ? [node]
           : (() => { throw new Error(`Unrecognized group: ${group}`) })()
-
+          NaiveShardedNetwork
         // set difference (nodes - observed)
         const unresolved = nodes.filter(v => !observed.has(v))
         return [event, new Set(unresolved)]
@@ -106,10 +110,65 @@ export class NetworkModel {
 
 }
 
+/**
+ * Network model which assumes that all nodes are validators for every entry
+ */
 export class FullSyncNetwork extends NetworkModel {
 
   validators = (entry: Entry): Set<NodeId> => {
     // currently full-sync
     return _.cloneDeep(this.nodes)
   }
+}
+
+/**
+ * Network model which can handle a sharded network.
+ * It ignores the particulars about which node should be validating which entry,
+ * and instead expects a certain number of distinct validators to observe
+ * each pending event, hoping that that will be enough.
+ * This is a very approximate model, and relies heavily on the ability of Holochain
+ * to fetch entries for nodes even before the node has reached full saturation,
+ * as long as the network topology is somewhat stable around the time of publishing.
+ */
+export class NaiveShardedNetwork extends NetworkModel {
+
+  minValidators: number = 15
+
+  observationTimes: Record<Event, Array<number>>
+
+  constructor(minValidators: number, nodes: Array<NodeId>) {
+    super(nodes)
+    this.minValidators = minValidators
+    this.observationTimes = {}
+  }
+
+  consumeSignal(node: string, signal: Signal) {
+    if (!this.observationTimes[signal.event]) {
+      this.observationTimes[signal.event] = []
+    }
+    this.observationTimes[signal.event].push(Date.now())
+    return NetworkModel.prototype.consumeSignal.call(this, node, signal)
+  }
+
+  validators = (entry: Entry): Set<NodeId> => {
+    // This is not really the validators we want, it's just here to properly drive the
+    // underlying eventDiff, from which we can deduce the proper waiting conditions
+    return _.cloneDeep(this.nodes)
+  }
+
+  numValidators = (): number => {
+    return Math.min(this.nodes.size, this.minValidators)
+  }
+
+  isConsistent(): boolean {
+    return this.numEventsAwaiting() === 0
+  }
+
+  numEventsAwaiting(): number {
+    return _.sum(
+      _.values(this.eventDiff())
+      .map(ns => Math.max(0, this.numValidators() - (this.nodes.size - ns.size)))
+    )
+  }
+
 }
