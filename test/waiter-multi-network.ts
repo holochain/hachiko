@@ -18,7 +18,7 @@ const pending = (group, event) => ({ group, event })
 
 const testWaiter = () => {
   const networks = networksFromNodes(nodes)
-  const waiter = new Waiter(FullSyncNetwork, networks)
+  const waiter = new Waiter(ns => new FullSyncNetwork(ns), networks)
   return waiter
 }
 
@@ -65,7 +65,7 @@ test('tracks events across multiple networks', t => {
 test('waiter can function even if node ids overlap', t => {
 
   // NB: 'x' shows up as a nodeId in two networks
-  const waiter = new Waiter(FullSyncNetwork, networksFromNodes({
+  const waiter = new Waiter(ns => new FullSyncNetwork(ns), networksFromNodes({
     a: ['a', 'b', 'c'],
     b: ['x', 'y', 'z'],
     c: ['h', 'a', 'x'],

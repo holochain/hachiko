@@ -41,17 +41,17 @@ export type NetworkMap = {
 
 export class Waiter {
   networks: NetworkMap
-  networkModelClass: any
+  makeNetwork: (nodes: Array<NodeId>) => NetworkModel
   complete: Promise<null>
   callbacks: Array<TimedCallback>
   timeoutSettings: TimeoutSettings
 
   completedObservations: Array<InstrumentedObservation>
 
-  constructor(networkModelClass, initialNetworks: NetworkMap = {}, opts: WaiterOptions = {}) {
+  constructor(makeNetwork: (nodes: Array<NodeId>) => NetworkModel, initialNetworks: NetworkMap = {}, opts: WaiterOptions = {}) {
     this.completedObservations = []
     this.callbacks = []
-    this.networkModelClass = networkModelClass
+    this.makeNetwork = makeNetwork
     this.networks = _.cloneDeep(initialNetworks)
     this.timeoutSettings = {
       softDuration: opts.softTimeout || DEFAULT_SOFT_TIMEOUT_MS,
@@ -64,7 +64,7 @@ export class Waiter {
     if (this.networks[networkName]) {
       this.networks[networkName].addNode(nodeId)
     } else {
-      this.networks[networkName] = new this.networkModelClass([nodeId])
+      this.networks[networkName] = this.makeNetwork([nodeId])
     }
   }
 

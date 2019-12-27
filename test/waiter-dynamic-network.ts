@@ -6,7 +6,7 @@ import { test, signal, pending } from './common'
 const observation = (dna, node, signal) => ({ dna, node, signal })
 
 test('can add and remove nodes from networks', t => {
-  const waiter = new Waiter(FullSyncNetwork)
+  const waiter = new Waiter(ns => new FullSyncNetwork(ns))
   waiter.addNode('n1', 'amanda')
   waiter.addNode('n2', 'amanda')
   waiter.addNode('n2', 'erin')
@@ -32,7 +32,7 @@ test('can add and remove nodes from networks', t => {
 
 
 test('removing node from network also removes its pending effects', t => {
-  const waiter = new Waiter(FullSyncNetwork)
+  const waiter = new Waiter(ns => new FullSyncNetwork(ns))
   waiter.addNode('network', 'amanda')
   waiter.addNode('network', 'erin')
   waiter.addNode('network', 'aitin')
@@ -54,7 +54,7 @@ test('removing node from network also removes its pending effects', t => {
 
 
 test('adding a node to the network increases pending effects', t => {
-  const waiter = new Waiter(FullSyncNetwork)
+  const waiter = new Waiter(ns => new FullSyncNetwork(ns))
   waiter.addNode('network', 'amanda')
   waiter.addNode('network', 'erin')
 
@@ -69,7 +69,7 @@ test('adding a node to the network increases pending effects', t => {
 })
 
 test('adding a node to the network increases pending effects even when an event has been covered by others', t => {
-  const waiter = new Waiter(FullSyncNetwork)
+  const waiter = new Waiter(ns => new FullSyncNetwork(ns))
   waiter.addNode('network', 'amanda')
   waiter.addNode('network', 'galen')
 

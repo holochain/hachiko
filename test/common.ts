@@ -62,7 +62,7 @@ export const testWaiter = (agents, opts?) => {
     hardTimeout: TIMEOUTS.hard,
   }, opts || {})
   const network = new FullSyncNetwork(agents)
-  const waiter = new Waiter(FullSyncNetwork, { testnet: network }, options)
+  const waiter = new Waiter(nodes => new FullSyncNetwork(nodes), { testnet: network }, options)
   return waiter
 }
 
