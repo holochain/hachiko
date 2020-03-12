@@ -6,7 +6,7 @@ import {
 } from './elements'
 
 import {
-  NetworkModel, ObservedEvents
+  NetworkModel, ObservedEvents, ObservedEventsArray
 } from './network'
 
 import logger from './logger'
@@ -19,7 +19,7 @@ const DEFAULT_HARD_TIMEOUT_MS = 12000
 type InstrumentedObservation = {
   observation: Observation,
   stats: {
-    timestamp: number
+    timestamp: number,
   }
 }
 
@@ -81,6 +81,14 @@ export class Waiter {
 
   eventsAwaiting(): Record<NodeId, ObservedEvents> {
     return _.mapValues(this.networks, model => model.eventDiff())
+  }
+
+  eventsAwaitingArray(): Record<NodeId, ObservedEventsArray> {
+    return _.mapValues(this.networks, model => model.eventDiffArray())
+  }
+
+  ignoreAllPending() {
+    _.mapValues(this.networks, model => model.ignorePending())
   }
 
   registerCallback(cb: CallbackData) {

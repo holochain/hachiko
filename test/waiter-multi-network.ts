@@ -61,8 +61,52 @@ test('tracks events across multiple networks', t => {
   t.end()
 })
 
+test('ignores events on multiple networks', t => {
+  const waiter = testWaiter()
 
-test('waiter can function even if node ids overlap', t => {
+  t.equal(waiter.totalEventsAwaiting(), 0)
+
+  waiter.handleObservation(
+    observation('autumn', signal('x', [pending('Validators', 'y')]))
+  )
+  waiter.handleObservation(
+    observation('lucas', signal('x', [pending('Validators', 'y')]))
+  )
+  waiter.handleObservation(observation('jill', signal('y', [])))
+  t.equal(waiter.totalEventsAwaiting(), 4)
+  t.deepEqual(waiter.eventsAwaitingArray(), { n1: { y: [ 'autumn', 'mara' ] }, n2: {}, n3: { y: [ 'lucas', 'blair' ] } })
+
+  waiter.ignoreAllPending()
+  t.equal(waiter.totalEventsAwaiting(), 0)
+  t.deepEqual(waiter.eventsAwaitingArray(), { n1: {}, n2: {}, n3: {} })
+
+  waiter.handleObservation(
+    observation('lucas', signal('x', [pending('Validators', 'y')]))
+  )
+  waiter.handleObservation(
+    observation('autumn', signal('x', [pending('Validators', 'y')]))
+  )
+  t.equal(waiter.totalEventsAwaiting(), 0)
+  t.deepEqual(waiter.eventsAwaitingArray(), { n1: {}, n2: {}, n3: {} })
+
+  // does not ignore the same signal on a different network
+  // (the fact that signal itself is identical is only a coincidence)
+  waiter.handleObservation(
+    observation('bo', signal('x', [pending('Validators', 'y')]))
+  )
+
+  t.equal(waiter.totalEventsAwaiting(), 2)
+
+  waiter.handleObservation(
+    observation('blair', signal('x', [pending('Validators', 'y')]))
+  )
+  t.equal(waiter.totalEventsAwaiting(), 2)
+  t.deepEqual(waiter.eventsAwaitingArray(), { n1: {}, n2: {y: ['bo', 'skylar']}, n3: {} })
+
+  t.end()
+})
+
+test('waiter works even if node ids overlap', t => {
 
   // NB: 'x' shows up as a nodeId in two networks
   const waiter = new Waiter(FullSyncNetwork, networksFromNodes({

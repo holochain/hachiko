@@ -107,8 +107,15 @@ export class TimedCallback {
         throw new Error("hachiko timeout!!")
       }
     } else {
-      console.log("Since hachiko is not in strict mode, the test will resume now,")
-      console.log("even though hachiko thinks it will fail. Good luck!")
+      if (this.waiter.totalEventsAwaiting() > 0) {
+        // if the callback completed due to a hard timeout, mark the pending observations
+        // as completed, so we don't wait for them in subsequent callbacks
+        this.waiter.ignoreAllPending()
+      }
+
+      console.log("Since hachiko is not in strict mode, the test will resume now, even though")
+      console.log("hachiko thinks it may fail. All pending observations will be ignored")
+      console.log("from now on when awaiting subsequent callbacks. Good luck!")
       this.cb.resolve(this.waiter.completedObservations.length - this.numCompletedAtStart)
     }
   }

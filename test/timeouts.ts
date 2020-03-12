@@ -119,7 +119,6 @@ test.skip('timeout reset scenario 1', withClock(async (t, clk) => {
   t.callCount(cb1._onSoftTimeout, 2)
   t.callCount(cb1._onHardTimeout, 0)
 
-
   clk.tick(soft)
   t.callCount(cb0._onSoftTimeout, 1)
   t.callCount(cb0._onHardTimeout, 1)
